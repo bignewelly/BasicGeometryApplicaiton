@@ -7,7 +7,7 @@
         mc:Ignorable="d"
         Title="Canvas" Height="300" Width="300">
     <Canvas Name="drawingCanvas" Background="Beige" MouseDown="Canvas_MouseDown" Height="Auto" Width="Auto" MouseUp="Canvas_MouseUp" MouseMove="Canvas_MouseMove" >
-        <Path Stroke="Black" StrokeThickness="1" Fill="Aqua">
+        <Path Stroke="Black" StrokeThickness="1" Fill="Aqua" Canvas.Left="-2.841">
             <Path.Data>
                 <GeometryGroup FillRule="Nonzero">
                 </GeometryGroup>

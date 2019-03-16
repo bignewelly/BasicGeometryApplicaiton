@@ -63,7 +63,7 @@ namespace BasicGeometryApp
             {
                 System.Windows.Controls.Canvas drawingCanvas = GetCanvas();
 
-                rectGeo = new RectangleGeometry(new Rect(new Point(-1000, -1000), new Point(1000, 1000)));
+                rectGeo = new RectangleGeometry(new Rect(new Point(0, 0), new Point(1, 1)));
 
                 GeometryGroup group = new GeometryGroup();
                 group.Children.Add(rectGeo);
@@ -72,7 +72,10 @@ namespace BasicGeometryApp
 
                 rectPath.Stroke = Brushes.Black;
                 rectPath.StrokeThickness = 1;
+                rectPath.Fill = Brushes.Aqua;
                 rectPath.Data = rectGeo;
+
+                drawingCanvas.Children.Add(rectPath);
             }
 
             return rectGeo;
