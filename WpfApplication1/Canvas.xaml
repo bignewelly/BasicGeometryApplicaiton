@@ -1,0 +1,17 @@
+﻿<Window x:Class="BasicGeometryApp.Canvas"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:BasicGeometryApp"
+        mc:Ignorable="d"
+        Title="Canvas" Height="300" Width="300">
+    <Canvas Name="drawingCanvas" Background="Beige" MouseDown="Canvas_MouseDown" Height="Auto" Width="Auto" MouseUp="Canvas_MouseUp" MouseMove="Canvas_MouseMove" >
+        <Path Stroke="Black" StrokeThickness="1" Fill="Aqua">
+            <Path.Data>
+                <GeometryGroup FillRule="Nonzero">
+                </GeometryGroup>
+            </Path.Data>
+        </Path>
+    </Canvas>
+</Window>
