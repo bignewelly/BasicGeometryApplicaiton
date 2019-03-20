@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -22,17 +23,37 @@ namespace BasicGeometryApp
         public Canvas()
         {
             InitializeComponent();
+
+            // initialize our base matrix
+            Transform = new MatrixTransform();
         }
 
         private void Canvas_MouseDown(object sender, MouseButtonEventArgs e)
         {
-            System.Windows.Controls.Canvas canvas = Canvas_Get();
+            switch (selectedTransformationType)
+            {
+                case WpfApplication1.Geometry.TransformationTypes.Translation:
+                    LastMouseLocation = e.GetPosition(Canvas_Get());
+                    break;
 
-            LastMouseLocation = e.GetPosition(canvas);
+                case WpfApplication1.Geometry.TransformationTypes.Similarity:
+                //TODO: Update the rotational transform
+                case WpfApplication1.Geometry.TransformationTypes.Rigid:
+                //Todo: update botht he scale and transform transforms
+                case WpfApplication1.Geometry.TransformationTypes.Projective:
+                // todo: update the projective transform (this might need to be done with a matrix)
+                case WpfApplication1.Geometry.TransformationTypes.Affine:
+                // todo: update the affine transform  (this might need to be with a matrix)
+                default:
+                    Matrix matrix = new Matrix();
+                    LastMouseLocation = e.GetPosition(Canvas_Get());
+                    matrix.Translate(LastMouseLocation.Value.X, LastMouseLocation.Value.Y);
 
-            Transform transform = new TranslateTransform(LastMouseLocation.Value.X, LastMouseLocation.Value.Y);
+                    Transform.Matrix = matrix;
+                    break;
+            }
 
-            Canvas_ReDraw(transform);
+            Canvas_ReDraw();
         }
 
         private void Canvas_MouseUp(object sender, MouseButtonEventArgs e)
@@ -43,9 +64,11 @@ namespace BasicGeometryApp
             transfromGroup.Children.Add(ScaleTransform_Get(currentMouseLocation));
             transfromGroup.Children.Add(TranslateTransform_Get(currentMouseLocation));
 
+            Transform.Matrix = transfromGroup.Value;
+
             LastMouseLocation = null;
 
-            Canvas_ReDraw(transfromGroup);
+            Canvas_ReDraw();
         }
 
         private void Canvas_MouseMove(object sender, MouseEventArgs e)
@@ -58,7 +81,9 @@ namespace BasicGeometryApp
                 transfromGroup.Children.Add(ScaleTransform_Get(currentMouseLocation));
                 transfromGroup.Children.Add(TranslateTransform_Get(currentMouseLocation));
 
-                Canvas_ReDraw(transfromGroup);
+                Transform.Matrix = transfromGroup.Value;
+
+                Canvas_ReDraw();
             }
         }
 
@@ -78,11 +103,11 @@ namespace BasicGeometryApp
             return new TranslateTransform(locX, locY);
         }
 
-        private void Canvas_ReDraw(Transform transform)
+        private void Canvas_ReDraw()
         {
             RectangleGeometry rectGeo = RectangleGeometry_Get();
 
-            rectGeo.Transform = transform;
+            rectGeo.Transform = Transform;
 
         }
 
@@ -116,6 +141,13 @@ namespace BasicGeometryApp
         }
 
         private Point? LastMouseLocation { get; set; }
-        private RectangleGeometry RectGeo { get; set;}
+        private RectangleGeometry RectGeo { get; set; }
+        private WpfApplication1.Geometry.TransformationTypes selectedTransformationType { get; set; }
+
+        /// <summary>
+        /// Transform Matrix transform.
+        /// </summary>
+        private MatrixTransform Transform { get; set; }
+
     }
 }
