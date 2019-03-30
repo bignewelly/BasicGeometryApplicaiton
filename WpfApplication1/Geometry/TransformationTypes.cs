@@ -11,6 +11,7 @@ namespace WpfApplication1.Geometry
     /// </summary>
     public enum TransformationTypes
     {
+        Unselected,
         /// <summary>
         ///  Orientation is perserved.
         /// </summary>
