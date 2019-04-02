@@ -26,13 +26,17 @@ namespace WpfApplication1.UI
             this.DrawingCanvas = Canvas;
             // initialize our base matrix
             TransformMatrix = new Matrix();
-            SelectedTransformationType = WpfApplication1.Geometry.TransformationTypes.Unselected;
 
             TransformTypesData = new ObservableCollection<KeyValuePair<WpfApplication1.Geometry.TransformationTypes, String>>();
 
             foreach (WpfApplication1.Geometry.TransformationTypes type in Enum.GetValues(typeof(WpfApplication1.Geometry.TransformationTypes)))
             {
-                TransformTypesData.Add(new KeyValuePair<WpfApplication1.Geometry.TransformationTypes, string>(type, type.ToString()));
+                KeyValuePair<WpfApplication1.Geometry.TransformationTypes, string> pair = new KeyValuePair<WpfApplication1.Geometry.TransformationTypes, string>(type, type.ToString());
+                if (type == Geometry.TransformationTypes.Unselected)
+                {
+                    SelectedTransformationType = pair;
+                }
+                TransformTypesData.Add(pair);
             }
 
         }
@@ -41,21 +45,15 @@ namespace WpfApplication1.UI
 
         public void Canvas_MouseDown(object sender, MouseButtonEventArgs e)
         {
-
-            switch (SelectedTransformationType)
+            LastMouseLocation = e.GetPosition(DrawingCanvas);
+            switch (SelectedTransformationType.Key)
             {
                 case WpfApplication1.Geometry.TransformationTypes.Translation:
-                    LastMouseLocation = e.GetPosition(DrawingCanvas);
-                    break;
-
                 case WpfApplication1.Geometry.TransformationTypes.Similarity:
-                //TODO: Update the rotational transform
                 case WpfApplication1.Geometry.TransformationTypes.Rigid:
-                //Todo: update botht he scale and transform transforms
                 case WpfApplication1.Geometry.TransformationTypes.Projective:
-                // todo: update the projective transform (this might need to be done with a matrix)
                 case WpfApplication1.Geometry.TransformationTypes.Affine:
-                // todo: update the affine transform  (this might need to be with a matrix)
+                    break;
                 case WpfApplication1.Geometry.TransformationTypes.Unselected:
                 default:
 
@@ -72,18 +70,22 @@ namespace WpfApplication1.UI
 
         public void Canvas_MouseUp(object sender, MouseButtonEventArgs e)
         {
+            Matrix matrix = TransformMatrix;
             Point currentMouseLocation = e.GetPosition(DrawingCanvas);
-
-            switch (SelectedTransformationType)
+            switch (SelectedTransformationType.Key)
             {
                 case WpfApplication1.Geometry.TransformationTypes.Translation:
-                    Matrix matrix = new Matrix();
-                    matrix.Translate(LastMouseLocation.Value.X - currentMouseLocation.X, LastMouseLocation.Value.Y - currentMouseLocation.Y);
+                    matrix.Translate(currentMouseLocation.X - LastMouseLocation.Value.X, currentMouseLocation.Y - LastMouseLocation.Value.Y);
+
+                    TransformMatrix = matrix;
                     break;
 
                 case WpfApplication1.Geometry.TransformationTypes.Similarity:
                 //TODO: Update the rotational transform
                 case WpfApplication1.Geometry.TransformationTypes.Rigid:
+                    TransformMatrix = Rotate(matrix, LastMouseLocation.Value, currentMouseLocation);
+                    break;
+
                 //Todo: update botht he scale and transform transforms
                 case WpfApplication1.Geometry.TransformationTypes.Projective:
                 // todo: update the projective transform (this might need to be done with a matrix)
@@ -110,38 +112,58 @@ namespace WpfApplication1.UI
         {
             Point currentMouseLocation = e.GetPosition(DrawingCanvas);
 
-            switch (SelectedTransformationType)
+            if (LastMouseLocation != null)
             {
-                case WpfApplication1.Geometry.TransformationTypes.Translation:
+                Matrix matrix = TransformMatrix;
+                switch (SelectedTransformationType.Key)
+                {
+                    case WpfApplication1.Geometry.TransformationTypes.Translation:
+                        matrix.Translate(currentMouseLocation.X - LastMouseLocation.Value.X, currentMouseLocation.Y - LastMouseLocation.Value.Y);
 
-                    Matrix matrix = new Matrix();
-                    matrix.Translate(LastMouseLocation.Value.X - currentMouseLocation.X, LastMouseLocation.Value.Y - currentMouseLocation.Y);
+                        TransformMatrix = matrix;
+                        LastMouseLocation = currentMouseLocation;
+                        break;
 
+                    case WpfApplication1.Geometry.TransformationTypes.Similarity:
+                    //TODO: Update the rotational transform
+                    case WpfApplication1.Geometry.TransformationTypes.Rigid:
+                        TransformMatrix = Rotate(matrix, LastMouseLocation.Value, currentMouseLocation);
+                        LastMouseLocation = currentMouseLocation;
+                        break;
+                    //Todo: update botht he scale and transform transforms
+                    case WpfApplication1.Geometry.TransformationTypes.Projective:
+                    // todo: update the projective transform (this might need to be done with a matrix)
+                    case WpfApplication1.Geometry.TransformationTypes.Affine:
+                    // todo: update the affine transform  (this might need to be with a matrix)
+                    case WpfApplication1.Geometry.TransformationTypes.Unselected:
+                    default:
+                        if (LastMouseLocation != null)
+                        {
+                            TransformGroup transfromGroup = new TransformGroup();
+                            transfromGroup.Children.Add(ScaleTransform_Get(currentMouseLocation));
+                            transfromGroup.Children.Add(TranslateTransform_Get(currentMouseLocation));
 
-                    LastMouseLocation = currentMouseLocation;
-                    break;
-
-                case WpfApplication1.Geometry.TransformationTypes.Similarity:
-                //TODO: Update the rotational transform
-                case WpfApplication1.Geometry.TransformationTypes.Rigid:
-                //Todo: update botht he scale and transform transforms
-                case WpfApplication1.Geometry.TransformationTypes.Projective:
-                // todo: update the projective transform (this might need to be done with a matrix)
-                case WpfApplication1.Geometry.TransformationTypes.Affine:
-                // todo: update the affine transform  (this might need to be with a matrix)
-                case WpfApplication1.Geometry.TransformationTypes.Unselected:
-                default:
-                    if (LastMouseLocation != null)
-                    {
-                        TransformGroup transfromGroup = new TransformGroup();
-                        transfromGroup.Children.Add(ScaleTransform_Get(currentMouseLocation));
-                        transfromGroup.Children.Add(TranslateTransform_Get(currentMouseLocation));
-
-                        TransformMatrix = transfromGroup.Value;
-                    }
-                    break;
+                            TransformMatrix = transfromGroup.Value;
+                        }
+                        break;
+                }
             }
             //Canvas_ReDraw();
+        }
+
+        private Matrix Rotate(Matrix CurrentMatrix, Point LastMouseLocation, Point CurrentMouseLocation)
+        {
+            Point centerPoint = CurrentMatrix.Transform(new Point(0.5, 0.5));
+            double v1x = CurrentMouseLocation.X - centerPoint.X;
+            double v1y = CurrentMouseLocation.Y - centerPoint.Y;
+            double v2x = LastMouseLocation.X - centerPoint.X;
+            double v2y = LastMouseLocation.Y - centerPoint.Y;
+
+            double angle = (Math.Atan2(v1x, v1y) - Math.Atan2(v2x, v2y)) * (-180 / Math.PI);
+
+            CurrentMatrix.RotateAt(angle, centerPoint.X, centerPoint.Y);
+
+            return CurrentMatrix;
         }
 
         private Transform ScaleTransform_Get(Point CurrentPoint)
@@ -236,8 +258,8 @@ namespace WpfApplication1.UI
             }
         }
 
-        private WpfApplication1.Geometry.TransformationTypes _SelectedTransformationType;
-        public WpfApplication1.Geometry.TransformationTypes SelectedTransformationType
+        private KeyValuePair<WpfApplication1.Geometry.TransformationTypes, string> _SelectedTransformationType;
+        public KeyValuePair<WpfApplication1.Geometry.TransformationTypes, string> SelectedTransformationType
         {
             get
             {
