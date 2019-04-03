@@ -81,7 +81,10 @@ namespace WpfApplication1.UI
                     break;
 
                 case WpfApplication1.Geometry.TransformationTypes.Similarity:
-                //TODO: Update the rotational transform
+                    matrix = Rotate(matrix, LastMouseLocation.Value, currentMouseLocation);
+                    matrix = Scale(matrix, LastMouseLocation.Value, currentMouseLocation);
+                    TransformMatrix = matrix;
+                    break;
                 case WpfApplication1.Geometry.TransformationTypes.Rigid:
                     TransformMatrix = Rotate(matrix, LastMouseLocation.Value, currentMouseLocation);
                     break;
@@ -112,7 +115,7 @@ namespace WpfApplication1.UI
         {
             Point currentMouseLocation = e.GetPosition(DrawingCanvas);
 
-            if (LastMouseLocation != null)
+            if (LastMouseLocation != null && ((currentMouseLocation.X - LastMouseLocation.Value.X) != 0 || (currentMouseLocation.Y - LastMouseLocation.Value.Y) != 0))
             {
                 Matrix matrix = TransformMatrix;
                 switch (SelectedTransformationType.Key)
@@ -125,7 +128,11 @@ namespace WpfApplication1.UI
                         break;
 
                     case WpfApplication1.Geometry.TransformationTypes.Similarity:
-                    //TODO: Update the rotational transform
+                        matrix = Rotate(matrix, LastMouseLocation.Value, currentMouseLocation);
+                        matrix = Scale(matrix, LastMouseLocation.Value, currentMouseLocation);
+                        TransformMatrix = matrix;
+                        LastMouseLocation = currentMouseLocation;
+                        break;
                     case WpfApplication1.Geometry.TransformationTypes.Rigid:
                         TransformMatrix = Rotate(matrix, LastMouseLocation.Value, currentMouseLocation);
                         LastMouseLocation = currentMouseLocation;
@@ -163,6 +170,26 @@ namespace WpfApplication1.UI
 
             CurrentMatrix.RotateAt(angle, centerPoint.X, centerPoint.Y);
 
+            return CurrentMatrix;
+        }
+
+        private Matrix Scale(Matrix CurrentMatrix, Point LastMouseLocation, Point CurrentMouseLocation)
+        {
+            Matrix invertMatrix = CurrentMatrix;
+            if (invertMatrix.HasInverse)
+            {
+                invertMatrix.Invert();
+                Point centerPoint = CurrentMatrix.Transform(new Point(0.5, 0.5));
+
+                double lastDiff = Point.Subtract(LastMouseLocation, centerPoint).Length;
+                double currentDiff = Point.Subtract(CurrentMouseLocation, centerPoint).Length;
+
+                if (lastDiff != 0 || lastDiff != 0)
+                {
+                    double scale = currentDiff / lastDiff;
+                    CurrentMatrix.ScaleAt(scale, scale, centerPoint.X, centerPoint.Y);
+                }
+            }
             return CurrentMatrix;
         }
 
