@@ -89,11 +89,14 @@ namespace WpfApplication1.UI
                     TransformMatrix = Rotate(matrix, LastMouseLocation.Value, currentMouseLocation);
                     break;
 
-                //Todo: update botht he scale and transform transforms
+                case WpfApplication1.Geometry.TransformationTypes.Affine:
+                    matrix = Affine(matrix, LastMouseLocation.Value, currentMouseLocation);
+                    matrix = Rotate(matrix, LastMouseLocation.Value, currentMouseLocation);
+                    TransformMatrix = matrix;
+                    LastMouseLocation = currentMouseLocation;
+                    break;
                 case WpfApplication1.Geometry.TransformationTypes.Projective:
                 // todo: update the projective transform (this might need to be done with a matrix)
-                case WpfApplication1.Geometry.TransformationTypes.Affine:
-                // todo: update the affine transform  (this might need to be with a matrix)
                 case WpfApplication1.Geometry.TransformationTypes.Unselected:
                 default:
                     TransformGroup transfromGroup = new TransformGroup();
@@ -105,7 +108,6 @@ namespace WpfApplication1.UI
                     LastMouseLocation = null;
                     break;
             }
-
             LastMouseLocation = null;
 
             //Canvas_ReDraw();
@@ -137,11 +139,14 @@ namespace WpfApplication1.UI
                         TransformMatrix = Rotate(matrix, LastMouseLocation.Value, currentMouseLocation);
                         LastMouseLocation = currentMouseLocation;
                         break;
-                    //Todo: update botht he scale and transform transforms
+                    case WpfApplication1.Geometry.TransformationTypes.Affine:
+                        matrix = Affine(matrix, LastMouseLocation.Value, currentMouseLocation);
+                        matrix = Rotate(matrix, LastMouseLocation.Value, currentMouseLocation);
+                        TransformMatrix = matrix;
+                        LastMouseLocation = currentMouseLocation;
+                        break;
                     case WpfApplication1.Geometry.TransformationTypes.Projective:
                     // todo: update the projective transform (this might need to be done with a matrix)
-                    case WpfApplication1.Geometry.TransformationTypes.Affine:
-                    // todo: update the affine transform  (this might need to be with a matrix)
                     case WpfApplication1.Geometry.TransformationTypes.Unselected:
                     default:
                         if (LastMouseLocation != null)
@@ -173,6 +178,30 @@ namespace WpfApplication1.UI
             return CurrentMatrix;
         }
 
+        private Matrix Affine(Matrix CurrentMatrix, Point LastMouseLocation, Point CurrentMouseLocation)
+        {
+            Matrix invertMatrix = CurrentMatrix;
+            if (invertMatrix.HasInverse)
+            {
+                invertMatrix.Invert();
+                Point centerPoint = CurrentMatrix.Transform(new Point(0.5, 0.5));
+
+                double lastDiffX = LastMouseLocation.X - centerPoint.X ;
+                double currentDiffX = CurrentMouseLocation.X -  centerPoint.X;
+                double lastDiffY = LastMouseLocation.Y - centerPoint.Y;
+                double currentDiffY = CurrentMouseLocation.Y - centerPoint.Y;
+
+                double scaleX = 1;
+                double scaleY = 1;
+                if ( lastDiffX != 0 ) scaleX = currentDiffX / lastDiffX;
+
+                if ( lastDiffY != 0 ) scaleY = currentDiffY / lastDiffY;
+
+                CurrentMatrix.ScaleAt(scaleX, scaleY, centerPoint.X, centerPoint.Y);
+            }
+            return CurrentMatrix;
+        }
+
         private Matrix Scale(Matrix CurrentMatrix, Point LastMouseLocation, Point CurrentMouseLocation)
         {
             Matrix invertMatrix = CurrentMatrix;
@@ -184,7 +213,7 @@ namespace WpfApplication1.UI
                 double lastDiff = Point.Subtract(LastMouseLocation, centerPoint).Length;
                 double currentDiff = Point.Subtract(CurrentMouseLocation, centerPoint).Length;
 
-                if (lastDiff != 0 || lastDiff != 0)
+                if (currentDiff != 0 && lastDiff != 0)
                 {
                     double scale = currentDiff / lastDiff;
                     CurrentMatrix.ScaleAt(scale, scale, centerPoint.X, centerPoint.Y);
