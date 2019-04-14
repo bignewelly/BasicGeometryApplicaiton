@@ -15,8 +15,10 @@
         <Grid.RowDefinitions>
             <RowDefinition Height="*" />
             <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
-        <Button Click="Button_Click" Grid.Row="1" Grid.Column="1" Height="auto"  Width="auto" Content="New Canvas" />
+        <Button Click="Button_Click" Grid.Row="1" Grid.Column="1" Height="auto"  Width="auto" Content="New Canvas" Padding="3" />
+        <Button Click="PictureAnalizer_Click" Grid.Row="2" Grid.Column="1" Height="auto"  Width="auto" Padding="3" Content="Picture Analizer" />
     </Grid>
 </Window>

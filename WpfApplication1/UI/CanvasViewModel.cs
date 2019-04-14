@@ -202,6 +202,33 @@ namespace WpfApplication1.UI
             return CurrentMatrix;
         }
 
+        private Matrix Projective(Matrix CurrentMatrix, Point LastMouseLocation, Point CurrentMouseLocation)
+        {
+            Matrix invertMatrix = CurrentMatrix;
+            if (invertMatrix.HasInverse)
+            {
+                invertMatrix.Invert();
+                Point centerPoint = CurrentMatrix.Transform(new Point(0.5, 0.5));
+
+                System.Windows.Media.Media3D.Point3D center3D = new System.Windows.Media.Media3D.Point3D(centerPoint.X, centerPoint.Y, 0);
+                System.Windows.Media.Media3D.Point3D cavasCenter = new System.Windows.Media.Media3D.Point3D(DrawingCanvas.ActualWidth / 2, DrawingCanvas.ActualHeight / 2, -1);
+
+                double lastDiffX = LastMouseLocation.X - centerPoint.X;
+                double currentDiffX = CurrentMouseLocation.X - centerPoint.X;
+                double lastDiffY = LastMouseLocation.Y - centerPoint.Y;
+                double currentDiffY = CurrentMouseLocation.Y - centerPoint.Y;
+
+                double scaleX = 1;
+                double scaleY = 1;
+                if (lastDiffX != 0) scaleX = currentDiffX / lastDiffX;
+
+                if (lastDiffY != 0) scaleY = currentDiffY / lastDiffY;
+
+                CurrentMatrix.ScaleAt(scaleX, scaleY, centerPoint.X, centerPoint.Y);
+            }
+            return CurrentMatrix;
+        }
+
         private Matrix Scale(Matrix CurrentMatrix, Point LastMouseLocation, Point CurrentMouseLocation)
         {
             Matrix invertMatrix = CurrentMatrix;

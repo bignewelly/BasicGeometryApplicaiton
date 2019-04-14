@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -10,33 +11,27 @@ using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
 using System.Windows.Shapes;
+using WpfApplication1.UI;
 
 namespace BasicGeometryApp
 {
     /// <summary>
-    /// Interaction logic for MainWindow.xaml
+    /// Interaction logic for Canvas.xaml
     /// </summary>
-    public partial class MainWindow : Window
+    public partial class Analizer : Window
     {
-        public MainWindow()
+        public Analizer()
         {
             InitializeComponent();
+
+            this.DataContext = new AnalizerViewModel();
         }
 
-        private void Button_Click(object sender, RoutedEventArgs e)
+        private void GetImage_Click(object sender, RoutedEventArgs e)
         {
-            Canvas canvas = new Canvas();
-
-            canvas.Show();
+            ((AnalizerViewModel)this.DataContext).GetImage_Click(sender, e);
         }
 
-        private void PictureAnalizer_Click(object sender, RoutedEventArgs e)
-        {
-            Analizer analizer = new Analizer();
-
-            analizer.Show();
-        }
     }
 }

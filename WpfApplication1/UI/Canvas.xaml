@@ -37,9 +37,8 @@
                     <ColumnDefinition Width="auto" />
                     <ColumnDefinition Width="auto" />
                 </Grid.ColumnDefinitions>
-                <Button Grid.Row="0" Height="auto"  Width="auto" Content="Test" />
                 <Label Grid.Column="2">Transform Type</Label>
-                <ComboBox Grid.Column="3" Width="auto" IsSynchronizedWithCurrentItem="True" ItemsSource="{Binding Path=TransformTypesData}" DisplayMemberPath="Value"
+                <ComboBox Grid.Column="3" Width="auto" IsSynchronizedWithCurrentItem="True" Padding="3" ItemsSource="{Binding Path=TransformTypesData}" DisplayMemberPath="Value"
                       SelectedItem="{Binding Path=SelectedTransformationType, Mode=TwoWay}"/>
             </Grid>
             <Canvas Grid.Row="1" Name="drawingCanvas" MouseDown="Canvas_MouseDown" ClipToBounds="True" MouseUp="Canvas_MouseUp" MouseMove="Canvas_MouseMove" Background="Beige" Height="auto" Width="auto" >
