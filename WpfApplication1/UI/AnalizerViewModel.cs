@@ -14,8 +14,7 @@ using System.Windows.Documents;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
-
-
+using System.Windows.Controls.Primitives;
 
 namespace WpfApplication1.UI
 {
@@ -56,6 +55,11 @@ namespace WpfApplication1.UI
             {
                 ImageFile = dlg.FileName;
             }
+        }
+
+        public void BlurImage_Click(object sender, RoutedEventArgs e)
+        {
+            BlurImage(GetPixels(new System.Drawing.Bitmap(ImageFile)));
         }
 
         protected Matrix GetTransformMatrixForImage(System.Drawing.Image ImageFile)
@@ -103,15 +107,101 @@ namespace WpfApplication1.UI
             return matrix;
         }
 
-        private void BlurImage(System.Drawing.Bitmap Image)
+        private void BlurImage(System.Drawing.Color[,] Image)
         {
+
+            int width = Image.GetLength(0);
+            int height = Image.GetLength(1);
+
+            uint[] pixels = new uint[Image.Length];
+            WriteableBitmap bitmap = new WriteableBitmap(width, height, 96, 96, PixelFormats.Bgra32, null);
+
+            int xDist = 5;
+            int yDist = xDist;
+
+            int xCount = (xDist * 2) + 1;
+            int yCount = (yDist * 2) + 1;
+
+            double[] inverses = new double[(xCount * yCount) + 1];
+
+            Parallel.For(1, inverses.Length, i =>
+           {
+               inverses[i] = 1.0 / i;
+           });
+
+            Parallel.For(0, width, x =>
+            {
+                for (int y = 0; y < height; y++)
+                {
+
+                    int pixelCount = 0;
+                    int r = 0;
+                    int g = 0;
+                    int b = 0;
+                    int a = 0;
+
+                    for (int i = -xDist; i <= xDist; i++)
+                    {
+                        if (x + i >= 0 && x + i < width)
+                        {
+                            for (int j = -yDist; j <= yDist; j++)
+                            {
+                                if (y + j >= 0 && y + j < height)
+                                {
+                                    System.Drawing.Color pixel = Image[x + i, y + j];
+
+                                    r += (int)pixel.R;
+                                    g += (int)pixel.G;
+                                    b += (int)pixel.B;
+                                    a += (int)pixel.A;
+                                    pixelCount++;
+                                }
+                            }
+                        }
+                    }
+
+                    if (pixelCount > 0)
+                    {
+                        System.Drawing.Color currentPixel = System.Drawing.Color.FromArgb((int)(a * inverses[pixelCount]), (int)(r * inverses[pixelCount]), (int)(g * inverses[pixelCount]), (int)(b * inverses[pixelCount]));
+                        pixels[y * width + x] = (uint)((currentPixel.A << 24) | (currentPixel.R << 16) | (currentPixel.G << 8) |(currentPixel.B << 0));
+                    }
+                    else
+                    {
+                        //This shouldn't ever happen
+                        throw new Exception("Pixel count 0.");
+                    }
+                }
+            });
+
+            bitmap.WritePixels(new Int32Rect(0, 0, width, height), pixels, width * 4, 0);
+
+            ImageBitMap = bitmap;
+
+            //PopupMessage("Done.");
+        }
+
+        private void PopupMessage(string message)
+        {
+            Popup codePopup = new Popup();
+            TextBlock text = new TextBlock();
+            text.Text = message;
+            codePopup.Child = text;
+            codePopup.IsOpen = true;
+        }
+
+        private System.Drawing.Color[,] GetPixels(System.Drawing.Bitmap Image)
+        {
+            System.Drawing.Color[,] pixels = new System.Drawing.Color[Image.Width, Image.Height];
+
             for (int x = 0; x < Image.Width; x++)
             {
-                for (int y = 0; y < Image.Height; x++)
+                for (int y = 0; y < Image.Height; y++)
                 {
-                    //Todo: average pixel with its neighbors.
+                    pixels[x, y] = Image.GetPixel(x, y);
                 }
             }
+
+            return pixels;
         }
 
         private String _ImageFile = "";
@@ -126,14 +216,34 @@ namespace WpfApplication1.UI
             {
                 _ImageFile = value;
 
-                if (System.IO.File.Exists(ImageFile))
+                if (System.IO.File.Exists(System.IO.Path.GetFullPath(ImageFile)))
                 {
-                    System.Drawing.Image image = System.Drawing.Image.FromFile(System.IO.Path.GetFullPath(ImageFile));
+                    //ImageBitMap = new BitmapImage(new Uri(System.IO.Path.GetFullPath(ImageFile)));
 
-                    TransformMatrix = GetTransformMatrixForImage(image);
+                    BitmapSource source = new BitmapImage(new Uri(System.IO.Path.GetFullPath(ImageFile)));
+
+                    ImageBitMap = new WriteableBitmap(source);
+
+                    //TransformMatrix = GetTransformMatrixForImage(image);
                 }
 
                 this.PropertyChanged(this, new PropertyChangedEventArgs(nameof(ImageFile)));
+            }
+        }
+
+        private WriteableBitmap _ImageBitMap;
+
+        public WriteableBitmap ImageBitMap
+        {
+            get
+            {
+                return _ImageBitMap;
+            }
+            set
+            {
+                _ImageBitMap = value;
+
+                this.PropertyChanged(this, new PropertyChangedEventArgs(nameof(ImageBitMap)));
             }
         }
 

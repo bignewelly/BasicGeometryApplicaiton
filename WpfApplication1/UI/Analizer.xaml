@@ -27,11 +27,13 @@
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="auto" />
+                    <ColumnDefinition Width="auto" />
                     <ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>
                 <Button Grid.Column="1" Click="GetImage_Click" Height="auto" Width="auto" Content="Get Image" Padding="3" />
+                <Button Grid.Column="2" Click="BlurImage_Click" Height="auto" Width="auto" Content="Blur Image" Padding="3" />
             </Grid>
-            <Image Grid.Row="1" Source="{Binding Path=ImageFile}" >
+            <Image Grid.Row="1" Source="{Binding Path=ImageBitMap}" >
                 <Image.RenderTransform>
                     <MatrixTransform Matrix="{Binding TransformMatrix}" />
                 </Image.RenderTransform>

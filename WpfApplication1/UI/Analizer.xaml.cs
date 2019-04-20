@@ -33,5 +33,9 @@ namespace BasicGeometryApp
             ((AnalizerViewModel)this.DataContext).GetImage_Click(sender, e);
         }
 
+        private void BlurImage_Click(object sender, RoutedEventArgs e)
+        {
+            ((AnalizerViewModel)this.DataContext).BlurImage_Click(sender, e);
+        }
     }
 }
