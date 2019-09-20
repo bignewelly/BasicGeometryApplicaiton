@@ -60,7 +60,8 @@ namespace WpfApplication1.UI
 
         public void BlurImage_Click(object sender, RoutedEventArgs e)
         {
-            BlurImage(GetPixels(new System.Drawing.Bitmap(ImageFile)));
+            BlurImage(GetPixels(new System.Drawing.Bitmap(ImageFile)), ProcessingFolder + "Test.jpg");
+            SubtractImages(GetPixels(new System.Drawing.Bitmap(ImageFile)), GetPixels(new System.Drawing.Bitmap(ProcessingFolder + "Test.jpg")), ProcessingFolder + "Edges.jpg");
         }
 
         public void FindEdges_Click(object sender, RoutedEventArgs e)
@@ -113,7 +114,7 @@ namespace WpfApplication1.UI
             return matrix;
         }
 
-        private void BlurImage(System.Drawing.Color[,] Image)
+        private void BlurImage(System.Drawing.Color[,] Image, String ProcessFile)
         {
 
             int width = Image.GetLength(0);
@@ -181,14 +182,14 @@ namespace WpfApplication1.UI
 
             bitmap.WritePixels(new Int32Rect(0, 0, width, height), pixels, width * 4, 0);
 
-            SaveImage(ProcessingFolder + "Test.jpg", bitmap.Clone());
+            SaveImage(ProcessFile, bitmap.Clone());
 
             ImageBitMap = bitmap;
 
             //PopupMessage("Done.");
         }
 
-        private void FindEdges(System.Drawing.Color[,] Image1, System.Drawing.Color[,] Image2)
+        private void SubtractImages(System.Drawing.Color[,] Image1, System.Drawing.Color[,] Image2, String OutPutFile)
         {
 
             int width1 = Image1.GetLength(0);
@@ -200,66 +201,34 @@ namespace WpfApplication1.UI
             uint[] pixels = new uint[Image1.Length];
             WriteableBitmap bitmap = new WriteableBitmap(width1, height1, 96, 96, PixelFormats.Bgra32, null);
 
-            int xDist = 5;
-            int yDist = xDist;
-
-            int xCount = (xDist * 2) + 1;
-            int yCount = (yDist * 2) + 1;
-
-            double[] inverses = new double[(xCount * yCount) + 1];
-
-            Parallel.For(1, inverses.Length, i =>
+            Parallel.For(0, Math.Min(width1, width2), x =>
             {
-                inverses[i] = 1.0 / i;
-            });
-
-            Parallel.For(0, width1, x =>
-            {
-                for (int y = 0; y < height1; y++)
+                for (int y = 0; y < height1 && y < height2; y++)
                 {
+                    System.Drawing.Color pixel1 = Image1[x, y];
+                    System.Drawing.Color pixel2 = Image2[x, y];
 
-                    int pixelCount = 0;
-                    int r = 0;
-                    int g = 0;
-                    int b = 0;
-                    int a = 0;
+                    byte r = (byte)(Math.Max(pixel1.R, pixel2.R) - Math.Min(pixel1.R, pixel2.R));
+                    byte g = (byte)(Math.Max(pixel1.G, pixel2.G) - Math.Min(pixel1.G, pixel2.G));
+                    byte b = (byte)(Math.Max(pixel1.B, pixel2.B) - Math.Min(pixel1.B, pixel2.B));
+                    byte a = 255;
 
-                    for (int i = -xDist; i <= xDist; i++)
-                    {
-                        if (x + i >= 0 && x + i < width1)
-                        {
-                            for (int j = -yDist; j <= yDist; j++)
-                            {
-                                if (y + j >= 0 && y + j < height1)
-                                {
-                                    System.Drawing.Color pixel = Image1[x + i, y + j];
+                    byte p = Math.Max(Math.Max(r, g), b);
 
-                                    r += (int)pixel.R;
-                                    g += (int)pixel.G;
-                                    b += (int)pixel.B;
-                                    a += (int)pixel.A;
-                                    pixelCount++;
-                                }
-                            }
-                        }
-                    }
+                    //byte r = pixel2.R;
+                    //byte g = pixel2.G;
+                    //byte b = pixel2.B;
+                    //byte a = pixel2.A;
 
-                    if (pixelCount > 0)
-                    {
-                        System.Drawing.Color currentPixel = System.Drawing.Color.FromArgb((int)(a * inverses[pixelCount]), (int)(r * inverses[pixelCount]), (int)(g * inverses[pixelCount]), (int)(b * inverses[pixelCount]));
-                        pixels[y * width1 + x] = (uint)((currentPixel.A << 24) | (currentPixel.R << 16) | (currentPixel.G << 8) | (currentPixel.B << 0));
-                    }
-                    else
-                    {
-                        //This shouldn't ever happen
-                        throw new Exception("Pixel count 0.");
-                    }
+
+                    System.Drawing.Color currentPixel = System.Drawing.Color.FromArgb((int)(a), (int)(p), (int)(p), (int)(p));
+                    pixels[y * width1 + x] = (uint)((currentPixel.A << 24) | (currentPixel.R << 16) | (currentPixel.G << 8) | (currentPixel.B << 0));
                 }
             });
 
             bitmap.WritePixels(new Int32Rect(0, 0, width1, height1), pixels, width1 * 4, 0);
 
-            SaveImage(ProcessingFolder + "Test.jpg", bitmap.Clone());
+            SaveImage(OutPutFile, bitmap.Clone());
 
             ImageBitMap = bitmap;
 
