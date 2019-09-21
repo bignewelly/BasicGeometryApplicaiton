@@ -60,8 +60,9 @@ namespace WpfApplication1.UI
 
         public void BlurImage_Click(object sender, RoutedEventArgs e)
         {
-            BlurImage(GetPixels(new System.Drawing.Bitmap(ImageFile)), ProcessingFolder + "Test.jpg");
-            SubtractImages(GetPixels(new System.Drawing.Bitmap(ImageFile)), GetPixels(new System.Drawing.Bitmap(ProcessingFolder + "Test.jpg")), ProcessingFolder + "Edges.jpg");
+            BlurImage(GetPixels(new System.Drawing.Bitmap(ImageFile)), 1, ProcessingFolder + "Test4.jpg");
+            BlurImage(GetPixels(new System.Drawing.Bitmap(ImageFile)), 2, ProcessingFolder + "Test5.jpg");
+            SubtractImages(GetPixels(new System.Drawing.Bitmap(ProcessingFolder + "Test4.jpg")), GetPixels(new System.Drawing.Bitmap(ProcessingFolder + "Test5.jpg")), 10, ProcessingFolder + "Edges.jpg");
         }
 
         public void FindEdges_Click(object sender, RoutedEventArgs e)
@@ -114,7 +115,7 @@ namespace WpfApplication1.UI
             return matrix;
         }
 
-        private void BlurImage(System.Drawing.Color[,] Image, String ProcessFile)
+        private void BlurImage(System.Drawing.Color[,] Image, int Dist, String ProcessFile)
         {
 
             int width = Image.GetLength(0);
@@ -123,7 +124,7 @@ namespace WpfApplication1.UI
             uint[] pixels = new uint[Image.Length];
             WriteableBitmap bitmap = new WriteableBitmap(width, height, 96, 96, PixelFormats.Bgra32, null);
 
-            int xDist = 5;
+            int xDist = Dist;
             int yDist = xDist;
 
             int xCount = (xDist * 2) + 1;
@@ -189,7 +190,7 @@ namespace WpfApplication1.UI
             //PopupMessage("Done.");
         }
 
-        private void SubtractImages(System.Drawing.Color[,] Image1, System.Drawing.Color[,] Image2, String OutPutFile)
+        private void SubtractImages(System.Drawing.Color[,] Image1, System.Drawing.Color[,] Image2, byte Threshold, String OutPutFile)
         {
 
             int width1 = Image1.GetLength(0);
@@ -208,12 +209,16 @@ namespace WpfApplication1.UI
                     System.Drawing.Color pixel1 = Image1[x, y];
                     System.Drawing.Color pixel2 = Image2[x, y];
 
-                    byte r = (byte)(Math.Max(pixel1.R, pixel2.R) - Math.Min(pixel1.R, pixel2.R));
-                    byte g = (byte)(Math.Max(pixel1.G, pixel2.G) - Math.Min(pixel1.G, pixel2.G));
-                    byte b = (byte)(Math.Max(pixel1.B, pixel2.B) - Math.Min(pixel1.B, pixel2.B));
+                    int r = (Math.Max(pixel1.R, pixel2.R) - Math.Min(pixel1.R, pixel2.R));
+                    int g = (Math.Max(pixel1.G, pixel2.G) - Math.Min(pixel1.G, pixel2.G));
+                    int b = (Math.Max(pixel1.B, pixel2.B) - Math.Min(pixel1.B, pixel2.B));
                     byte a = 255;
 
-                    byte p = Math.Max(Math.Max(r, g), b);
+                    byte r2 = CheckThreshold((byte)Math.Min(255, r * r), Threshold);
+                    byte g2 = CheckThreshold((byte)Math.Min(255, g * g), Threshold);
+                    byte b2 = CheckThreshold((byte)Math.Min(255, b * b), Threshold);
+
+                    int p = Math.Max(Math.Max(r2, g2), b2);
 
                     //byte r = pixel2.R;
                     //byte g = pixel2.G;
@@ -341,6 +346,17 @@ namespace WpfApplication1.UI
                     encoder5.Frames.Add(BitmapFrame.Create(image));
                     encoder5.Save(stream5);
                 }
+            }
+        }
+
+        byte CheckThreshold(byte Value, byte Threshold)
+        {
+            if (Value >= Threshold)
+            {
+                return 255;
+            } else
+            {
+                return 0;
             }
         }
     }
