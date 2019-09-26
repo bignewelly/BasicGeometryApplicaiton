@@ -60,9 +60,17 @@ namespace WpfApplication1.UI
 
         public void BlurImage_Click(object sender, RoutedEventArgs e)
         {
-            BlurImage(GetPixels(new System.Drawing.Bitmap(ImageFile)), 1, ProcessingFolder + "Test4.jpg");
-            BlurImage(GetPixels(new System.Drawing.Bitmap(ImageFile)), 2, ProcessingFolder + "Test5.jpg");
-            SubtractImages(GetPixels(new System.Drawing.Bitmap(ProcessingFolder + "Test4.jpg")), GetPixels(new System.Drawing.Bitmap(ProcessingFolder + "Test5.jpg")), 10, ProcessingFolder + "Edges.jpg");
+            // get sigma values for bluring
+            int sigma1 = 8;
+            int sigma2 = 10;
+
+            // get file names
+            string file1 = ProcessingFolder + string.Format("Test{0}.jpg", sigma1);
+            string file2 = ProcessingFolder + string.Format("Test{0}.jpg", sigma2);
+
+            BlurImage(GetPixels(new System.Drawing.Bitmap(ImageFile)), sigma1, file1);
+            BlurImage(GetPixels(new System.Drawing.Bitmap(ImageFile)), sigma2, file2);
+            SubtractImages(GetPixels(new System.Drawing.Bitmap(file1)), GetPixels(new System.Drawing.Bitmap(file2)), 5, ProcessingFolder + "Edges.jpg");
         }
 
         public void FindEdges_Click(object sender, RoutedEventArgs e)
@@ -115,7 +123,7 @@ namespace WpfApplication1.UI
             return matrix;
         }
 
-        private void BlurImage(System.Drawing.Color[,] Image, int Dist, String ProcessFile)
+        private void BlurImage(System.Drawing.Color[,] Image, int Sigma, String ProcessFile)
         {
 
             int width = Image.GetLength(0);
@@ -124,29 +132,34 @@ namespace WpfApplication1.UI
             uint[] pixels = new uint[Image.Length];
             WriteableBitmap bitmap = new WriteableBitmap(width, height, 96, 96, PixelFormats.Bgra32, null);
 
-            int xDist = Dist;
+            int xDist = (Sigma * 3)/2;
             int yDist = xDist;
 
             int xCount = (xDist * 2) + 1;
             int yCount = (yDist * 2) + 1;
 
-            double[] inverses = new double[(xCount * yCount) + 1];
+            double inverse = 1.0 / (double)(xCount * yCount + 1);
 
-            Parallel.For(1, inverses.Length, i =>
-           {
-               inverses[i] = 1.0 / i;
-           });
+           // double[] inverses = new double[(xCount * yCount) + 1];
+
+
+           // Parallel.For(1, inverses.Length, i =>
+           //{
+           //    inverses[i] = 1.0 / i;
+           //});
+
+            double[,] filter = GetGaussianFilter(xDist, yDist, Sigma);
 
             Parallel.For(0, width, x =>
             {
                 for (int y = 0; y < height; y++)
                 {
 
-                    int pixelCount = 0;
-                    int r = 0;
-                    int g = 0;
-                    int b = 0;
-                    int a = 0;
+                    int pixelCount = (xDist * yCount) + 1;
+                    double r = 0;
+                    double g = 0;
+                    double b = 0;
+                    double a = 0;
 
                     for (int i = -xDist; i <= xDist; i++)
                     {
@@ -158,11 +171,12 @@ namespace WpfApplication1.UI
                                 {
                                     System.Drawing.Color pixel = Image[x + i, y + j];
 
-                                    r += (int)pixel.R;
-                                    g += (int)pixel.G;
-                                    b += (int)pixel.B;
-                                    a += (int)pixel.A;
-                                    pixelCount++;
+                                    double gauss = filter[i + xDist, j + yDist];
+
+                                    r += pixel.R * gauss;
+                                    g += pixel.G * gauss;
+                                    b += pixel.B * gauss;
+                                    a += pixel.A * gauss;
                                 }
                             }
                         }
@@ -170,7 +184,7 @@ namespace WpfApplication1.UI
 
                     if (pixelCount > 0)
                     {
-                        System.Drawing.Color currentPixel = System.Drawing.Color.FromArgb((int)(a * inverses[pixelCount]), (int)(r * inverses[pixelCount]), (int)(g * inverses[pixelCount]), (int)(b * inverses[pixelCount]));
+                        System.Drawing.Color currentPixel = System.Drawing.Color.FromArgb(255, Math.Min((int)(r * inverse), 255), Math.Min((int)(g * inverse), 255), Math.Min((int)(b * inverse), 255));
                         pixels[y * width + x] = (uint)((currentPixel.A << 24) | (currentPixel.R << 16) | (currentPixel.G << 8) |(currentPixel.B << 0));
                     }
                     else
@@ -358,6 +372,27 @@ namespace WpfApplication1.UI
             {
                 return 0;
             }
+        }
+
+        double[,] GetGaussianFilter(int XDist, int YDist, double o)
+        {
+            double[,] filter = new double[XDist*2 + 1,YDist*2 + 1];
+            double inv = 0.5 / (o * o);
+            Parallel.For(-XDist, XDist + 1, x =>
+            {
+                for (int y = -YDist; y <= YDist; y++)
+                {
+                    //get gausian for x and y
+                    filter[XDist + x, YDist + y] = GetGaussian(x, y, inv);
+                }
+            });
+
+            return filter;
+        } 
+
+        double GetGaussian(int x, int y, double inverse)
+        {
+            return Math.Pow(Math.E, (double)(-(x * x + y * y)) * inverse);
         }
     }
 }
