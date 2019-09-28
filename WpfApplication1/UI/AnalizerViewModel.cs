@@ -61,16 +61,20 @@ namespace WpfApplication1.UI
         public void BlurImage_Click(object sender, RoutedEventArgs e)
         {
             // get sigma values for bluring
-            int sigma1 = 8;
-            int sigma2 = 10;
+            int sigma1 = 3;
+            //int sigma2 = 10;
 
             // get file names
             string file1 = ProcessingFolder + string.Format("Test{0}.jpg", sigma1);
-            string file2 = ProcessingFolder + string.Format("Test{0}.jpg", sigma2);
+            //string file2 = ProcessingFolder + string.Format("Test{0}.jpg", sigma2);
+            string xDiff = ProcessingFolder + string.Format("XDiff{0}.jpg", sigma1);
+            string yDiff = ProcessingFolder + string.Format("YDiff{0}.jpg", sigma1);
 
             BlurImage(GetPixels(new System.Drawing.Bitmap(ImageFile)), sigma1, file1);
-            BlurImage(GetPixels(new System.Drawing.Bitmap(ImageFile)), sigma2, file2);
-            SubtractImages(GetPixels(new System.Drawing.Bitmap(file1)), GetPixels(new System.Drawing.Bitmap(file2)), 5, ProcessingFolder + "Edges.jpg");
+            //BlurImage(GetPixels(new System.Drawing.Bitmap(ImageFile)), sigma2, file2);
+            //SubtractImages(GetPixels(new System.Drawing.Bitmap(file1)), GetPixels(new System.Drawing.Bitmap(file2)), 5, ProcessingFolder + "Edges.jpg");
+            GetXDifferencial(GetPixels(new System.Drawing.Bitmap(file1)), xDiff);
+            GetyDifferencial(GetPixels(new System.Drawing.Bitmap(file1)), yDiff);
         }
 
         public void FindEdges_Click(object sender, RoutedEventArgs e)
@@ -132,13 +136,14 @@ namespace WpfApplication1.UI
             uint[] pixels = new uint[Image.Length];
             WriteableBitmap bitmap = new WriteableBitmap(width, height, 96, 96, PixelFormats.Bgra32, null);
 
-            int xDist = (Sigma * 3)/2;
+            int xDist = Sigma * 3;
+            //if (Sigma % 2 != 0) xDist += 1;
             int yDist = xDist;
 
             int xCount = (xDist * 2) + 1;
             int yCount = (yDist * 2) + 1;
 
-            double inverse = 1.0 / (double)(xCount * yCount + 1);
+            double inverse = (double)(xDist) / (double)(xCount * yCount);
 
            // double[] inverses = new double[(xCount * yCount) + 1];
 
@@ -202,6 +207,90 @@ namespace WpfApplication1.UI
             ImageBitMap = bitmap;
 
             //PopupMessage("Done.");
+        }
+
+        private void GetXDifferencial(System.Drawing.Color[,] Image, String OutPutFile)
+        {
+            int width = Image.GetLength(0);
+            int height = Image.GetLength(1);
+
+            uint[] pixels = new uint[Image.Length];
+            WriteableBitmap bitmap = new WriteableBitmap(width, height, 96, 96, PixelFormats.Bgra32, null);
+
+            int half = 255 / 2;
+
+            Parallel.For(0, width, x =>
+            {
+                for (int y = 0; y < height; y++)
+                {
+                    int r = 0;
+                    int g = 0;
+                    int b = 0;
+                    int a = 255;
+
+                    if (x + 1 < width)
+                    {
+                        System.Drawing.Color pixel1 = Image[x, y];
+                        System.Drawing.Color pixel2 = Image[x + 1, y];
+
+                        r = half + (int)pixel2.R - (int)pixel1.R;
+                        g = half + (int)pixel2.G - (int)pixel1.G;
+                        b = half + (int)pixel2.B - (int)pixel1.B;
+                    }
+
+                    System.Drawing.Color currentPixel = System.Drawing.Color.FromArgb(a, Math.Max(Math.Min(r, 255), 0), Math.Max(Math.Min(g, 255), 0), Math.Max(Math.Min(b, 255), 0));
+                    pixels[y * width + x] = (uint)((currentPixel.A << 24) | (currentPixel.R << 16) | (currentPixel.G << 8) | (currentPixel.B << 0));
+                }
+            });
+
+            bitmap.WritePixels(new Int32Rect(0, 0, width, height), pixels, width * 4, 0);
+
+            SaveImage(OutPutFile, bitmap.Clone());
+
+            ImageBitMap = bitmap;
+
+        }
+
+        private void GetyDifferencial(System.Drawing.Color[,] Image, String OutPutFile)
+        {
+            int width = Image.GetLength(0);
+            int height = Image.GetLength(1);
+
+            uint[] pixels = new uint[Image.Length];
+            WriteableBitmap bitmap = new WriteableBitmap(width, height, 96, 96, PixelFormats.Bgra32, null);
+
+            int half = 255 / 2;
+
+            Parallel.For(0, width, x =>
+            {
+                for (int y = 0; y < height; y++)
+                {
+                    int r = 0;
+                    int g = 0;
+                    int b = 0;
+                    int a = 255;
+
+                    if (y + 1 < height)
+                    {
+                        System.Drawing.Color pixel1 = Image[x, y];
+                        System.Drawing.Color pixel2 = Image[x, y + 1];
+
+                        r = half + (int)pixel2.R - (int)pixel1.R;
+                        g = half + (int)pixel2.G - (int)pixel1.G;
+                        b = half + (int)pixel2.B - (int)pixel1.B;
+                    }
+
+                    System.Drawing.Color currentPixel = System.Drawing.Color.FromArgb(a, Math.Max(Math.Min(r, 255), 0), Math.Max(Math.Min(g, 255), 0), Math.Max(Math.Min(b, 255), 0));
+                    pixels[y * width + x] = (uint)((currentPixel.A << 24) | (currentPixel.R << 16) | (currentPixel.G << 8) | (currentPixel.B << 0));
+                }
+            });
+
+            bitmap.WritePixels(new Int32Rect(0, 0, width, height), pixels, width * 4, 0);
+
+            SaveImage(OutPutFile, bitmap.Clone());
+
+            ImageBitMap = bitmap;
+
         }
 
         private void SubtractImages(System.Drawing.Color[,] Image1, System.Drawing.Color[,] Image2, byte Threshold, String OutPutFile)
