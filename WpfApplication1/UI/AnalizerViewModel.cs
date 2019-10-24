@@ -63,7 +63,7 @@ namespace WpfApplication1.UI
         public void BlurImage_Click(object sender, RoutedEventArgs e)
         {
             // get sigma values for bluring
-            int sigma1 = 3;
+            int sigma1 = 6;
             //int sigma2 = 10;
 
             // get file names
@@ -71,6 +71,7 @@ namespace WpfApplication1.UI
             string grayScale = ProcessingFolder + string.Format("GraySacale{0}.jpg", sigma1);
             string xBlur = ProcessingFolder + string.Format("xBlur{0}.jpg", sigma1);
             string yBlur = ProcessingFolder + string.Format("yBlur{0}.jpg", sigma1);
+            string blur = ProcessingFolder + string.Format("blur{0}.jpg", sigma1);
             //string file2 = ProcessingFolder + string.Format("Test{0}.jpg", sigma2);
             string xDiff = ProcessingFolder + string.Format("XDiff{0}.jpg", sigma1);
             string yDiff = ProcessingFolder + string.Format("YDiff{0}.jpg", sigma1);
@@ -82,17 +83,17 @@ namespace WpfApplication1.UI
             string ZeroCrossXXYY = ProcessingFolder + string.Format("ZeroCrossXXYY{0}.jpg", sigma1);
             //string GetOboveTreshold = ProcessingFolder + string.Format("Threshold{0}.jpg", sigma1);
 
-            //GrayScale(GetPixels(new System.Drawing.Bitmap(ImageFile)), grayScale);
-            //BlurImageX(GetPixels(new System.Drawing.Bitmap(grayScale)), sigma1, xBlur);
-            //BlurImageY(GetPixels(new System.Drawing.Bitmap(grayScale)), sigma1, yBlur);
-            ////BlurImage(GetPixels(new System.Drawing.Bitmap(ImageFile)), sigma2, file2);
-            ////SubtractImages(GetPixels(new System.Drawing.Bitmap(file1)), GetPixels(new System.Drawing.Bitmap(file2)), 5, ProcessingFolder + "Edges.jpg");
-            //GetXDifferencial(GetPixels(new System.Drawing.Bitmap(xBlur)), xDiff);
-            //GetyDifferencial(GetPixels(new System.Drawing.Bitmap(yBlur)), yDiff);
+            GrayScale(GetPixels(new System.Drawing.Bitmap(ImageFile)), grayScale);
+            BlurImageX(GetPixels(new System.Drawing.Bitmap(grayScale)), sigma1, xBlur);
+            BlurImageY(GetPixels(new System.Drawing.Bitmap(xBlur)), sigma1, blur);
+            //BlurImage(GetPixels(new System.Drawing.Bitmap(ImageFile)), sigma2, file2);
+            //SubtractImages(GetPixels(new System.Drawing.Bitmap(file1)), GetPixels(new System.Drawing.Bitmap(file2)), 5, ProcessingFolder + "Edges.jpg");
+            GetXDifferencial(GetPixels(new System.Drawing.Bitmap(blur)), xDiff);
+            GetyDifferencial(GetPixels(new System.Drawing.Bitmap(blur)), yDiff);
             //GetXDifferencial(GetPixels(new System.Drawing.Bitmap(xDiff)), xxDiff);
             //GetyDifferencial(GetPixels(new System.Drawing.Bitmap(yDiff)), yyDiff);
             //CombineDirectionalImages(GetPixels(new System.Drawing.Bitmap(xxDiff)), GetPixels(new System.Drawing.Bitmap(yyDiff)), xxyyComb);
-            //CombineDirectionalImages(GetPixels(new System.Drawing.Bitmap(xDiff)), GetPixels(new System.Drawing.Bitmap(yDiff)), xyComb);
+            CombineDirectionalImages(GetPixels(new System.Drawing.Bitmap(xDiff)), GetPixels(new System.Drawing.Bitmap(yDiff)), xyComb);
             //FindZeroCrossings(GetPixels(new System.Drawing.Bitmap(xyComb)), ZeroCross, 3);
             //FindZeroCrossings(GetPixels(new System.Drawing.Bitmap(xxyyComb)), ZeroCrossXXYY, 2);
 
@@ -100,8 +101,8 @@ namespace WpfApplication1.UI
             {
                 string GetOboveTreshold = ProcessingFolder + string.Format("Threshold{0}-{1}.jpg", sigma1, i);
                 string GetOboveTreshold2nd = ProcessingFolder + string.Format("Threshold2nd{0}-{1}.jpg", sigma1, i);
-                FindGreatestGradiant(GetPixels(new System.Drawing.Bitmap(xxyyComb)), GetOboveTreshold2nd, i);
-                //FindGreatestGradiant(GetPixels(new System.Drawing.Bitmap(xyComb)), GetOboveTreshold, i);
+                //FindGreatestGradiant(GetPixels(new System.Drawing.Bitmap(xxyyComb)), GetOboveTreshold2nd, i);
+                FindGreatestGradiant(GetPixels(new System.Drawing.Bitmap(xyComb)), GetOboveTreshold, i);
             }
         }
 
@@ -567,21 +568,120 @@ namespace WpfApplication1.UI
             uint[] pixels = new uint[Image.Length];
             WriteableBitmap bitmap = new WriteableBitmap(width, height, 96, 96, PixelFormats.Bgra32, null);
 
+            System.Drawing.Color halfPix = System.Drawing.Color.FromArgb(255, HALF, HALF, HALF);
+            System.Drawing.Color orig = System.Drawing.Color.FromArgb(255, 0, 0, 0);
+
             Parallel.For(0, width, x =>
             {
-                for (int y = 0; y < height; y++)
-                {
-                    int p = 0;
-                    int a = 255;
+            for (int y = 0; y < height; y++)
+            {
+                int p = 0;
+                int a = 255;
 
-                    System.Drawing.Color Pixel = Image[x, y];
+                System.Drawing.Color Pixel = Image[x, y];
 
-                    if (Math.Abs(Pixel.R - HALF) >= Threshold || Math.Abs(Pixel.G - HALF) >= Threshold)
+                    if (GetPixel2DDist(Pixel, halfPix) >= Threshold)
                     {
-                        p = 255;
+                        bool isExtrema = false;
+
+                        if (y - 1 >= 0)
+                        {
+                            System.Drawing.Color pixel2 = Image[x, y - 1];
+
+                            if (Pixel.G >= HALF)
+                            {
+                                if (pixel2.G < Pixel.G)
+                                {
+                                    isExtrema = true;
+                                }
+                            } else
+                            {
+                                if (pixel2.G > Pixel.G)
+                                {
+                                    isExtrema = true;
+                                };
+                            }
+                        }
+                        if (y + 1 < height)
+                        {
+                            System.Drawing.Color pixel2 = Image[x, y + 1];
+
+                            if (Pixel.G >= HALF)
+                            {
+                                if (pixel2.G < Pixel.G)
+                                {
+                                    isExtrema = true;
+                                } else
+                                {
+                                    isExtrema = false;
+                                }
+                            }
+                            else
+                            {
+                                if (pixel2.G > Pixel.G)
+                                {
+                                    isExtrema = true;
+                                } else
+                                {
+                                    isExtrema = false;
+                                }
+                            }
+                        }
+
+                        if (!isExtrema)
+                        {
+                            if (x - 1 >= 0)
+                            {
+                                System.Drawing.Color pixel2 = Image[x - 1, y];
+
+                                if (Pixel.R >= HALF)
+                                {
+                                    if (pixel2.R < Pixel.R)
+                                    {
+                                        isExtrema = true;
+                                    }
+                                }
+                                else
+                                {
+                                    if (pixel2.R > Pixel.R)
+                                    {
+                                        isExtrema = true;
+                                    }
+                                }
+
+                            }
+                            if (x + 1 < width)
+                            {
+                                System.Drawing.Color pixel2 = Image[x + 1, y];
+
+                                if (Pixel.R >= HALF)
+                                {
+                                    if (pixel2.R < Pixel.R)
+                                    {
+                                        isExtrema = true;
+                                    } else
+                                    {
+                                        isExtrema = false;
+                                    }
+                                }
+                                else
+                                {
+                                    if (pixel2.R > Pixel.R)
+                                    {
+                                        isExtrema = true;
+                                    } else
+                                    {
+                                        isExtrema = false;
+                                    }
+                                }
+
+                            }
+                        }
+
+                        if (isExtrema) p = 255;
                     }
 
-                    System.Drawing.Color currentPixel = System.Drawing.Color.FromArgb(a, p, p, p);
+                        System.Drawing.Color currentPixel = System.Drawing.Color.FromArgb(a, p, p, p);
                     pixels[y * width + x] = (uint)((currentPixel.A << 24) | (currentPixel.R << 16) | (currentPixel.G << 8) | (currentPixel.B << 0));
                 }
             });
@@ -880,17 +980,25 @@ namespace WpfApplication1.UI
             return Math.Pow(Math.E, (double)(-(x * x + y * y)) * inverse);
         }
 
-        int GetPixelDist(System.Drawing.Color p1, System.Drawing.Color p2)
+        int GetPixelDist(System.Drawing.Color p1, System.Drawing.Color p2, bool getSign = false)
         {
             int r = (int)p1.R - (int)p2.R;
             int g = (int)p1.G - (int)p2.G;
             int b = (int)p1.B - (int)p2.B;
 
-            int posneg = 1;
+            int sign = 1;
 
-            if ((r + g + b) < 0) posneg = -1;
+            if (getSign && (r + g + b) < 0) sign = -1;
 
-            return posneg * (int)Math.Sqrt(r * r + g * g + b * b);
+            return sign * (int)Math.Sqrt(r * r + g * g + b * b);
+        }
+
+        int GetPixel2DDist(System.Drawing.Color p1, System.Drawing.Color p2)
+        {
+            int r = (int)p1.R - (int)p2.R;
+            int g = (int)p1.G - (int)p2.G;
+
+            return (int)Math.Sqrt(r * r + g * g);
         }
     }
 }
