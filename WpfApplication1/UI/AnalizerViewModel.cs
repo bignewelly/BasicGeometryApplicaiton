@@ -63,12 +63,15 @@ namespace WpfApplication1.UI
         public void BlurImage_Click(object sender, RoutedEventArgs e)
         {
             // get sigma values for bluring
-            int sigma1 = 6;
+            int sigma1 = 3;
             //int sigma2 = 10;
 
             // get file names
             string file1 = ProcessingFolder + string.Format("Test{0}.jpg", sigma1);
             string grayScale = ProcessingFolder + string.Format("GraySacale{0}.jpg", sigma1);
+            string xLOG = ProcessingFolder + string.Format("xLOG{0}.jpg", sigma1);
+            string yLOG = ProcessingFolder + string.Format("yLOG{0}.jpg", sigma1);
+            string lOG = ProcessingFolder + string.Format("lOG{0}.jpg", sigma1);
             string xBlur = ProcessingFolder + string.Format("xBlur{0}.jpg", sigma1);
             string yBlur = ProcessingFolder + string.Format("yBlur{0}.jpg", sigma1);
             string blur = ProcessingFolder + string.Format("blur{0}.jpg", sigma1);
@@ -81,29 +84,36 @@ namespace WpfApplication1.UI
             string xxyyComb = ProcessingFolder + string.Format("XXYYComb{0}.jpg", sigma1);
             string ZeroCross = ProcessingFolder + string.Format("ZeroCross{0}.jpg", sigma1);
             string ZeroCrossXXYY = ProcessingFolder + string.Format("ZeroCrossXXYY{0}.jpg", sigma1);
-            //string GetOboveTreshold = ProcessingFolder + string.Format("Threshold{0}.jpg", sigma1);
+            string GetOboveTreshold = ProcessingFolder + string.Format("Threshold{0}.jpg", sigma1);
 
-            GrayScale(GetPixels(new System.Drawing.Bitmap(ImageFile)), grayScale);
-            BlurImageX(GetPixels(new System.Drawing.Bitmap(grayScale)), sigma1, xBlur);
-            BlurImageY(GetPixels(new System.Drawing.Bitmap(xBlur)), sigma1, blur);
+            //GrayScale(GetPixels(new System.Drawing.Bitmap(ImageFile)), grayScale);
+            //var pixels = GetPixels(new System.Drawing.Bitmap(ImageFile));
+            //LOGX(pixels, sigma1, xLOG);
+            //LOGY(pixels, sigma1, yLOG);
+            LOG(GetPixels(new System.Drawing.Bitmap(ImageFile)), sigma1, true, true, lOG);
+            //BlurImageX(GetPixels(new System.Drawing.Bitmap(grayScale)), sigma1, xBlur);
+            //BlurImageY(GetPixels(new System.Drawing.Bitmap(xBlur)), sigma1, blur);
             //BlurImage(GetPixels(new System.Drawing.Bitmap(ImageFile)), sigma2, file2);
             //SubtractImages(GetPixels(new System.Drawing.Bitmap(file1)), GetPixels(new System.Drawing.Bitmap(file2)), 5, ProcessingFolder + "Edges.jpg");
-            GetXDifferencial(GetPixels(new System.Drawing.Bitmap(blur)), xDiff);
-            GetyDifferencial(GetPixels(new System.Drawing.Bitmap(blur)), yDiff);
-            //GetXDifferencial(GetPixels(new System.Drawing.Bitmap(xDiff)), xxDiff);
-            //GetyDifferencial(GetPixels(new System.Drawing.Bitmap(yDiff)), yyDiff);
-            //CombineDirectionalImages(GetPixels(new System.Drawing.Bitmap(xxDiff)), GetPixels(new System.Drawing.Bitmap(yyDiff)), xxyyComb);
-            CombineDirectionalImages(GetPixels(new System.Drawing.Bitmap(xDiff)), GetPixels(new System.Drawing.Bitmap(yDiff)), xyComb);
+            //GetXDifferencial(GetPixels(new System.Drawing.Bitmap(blur)), xDiff);
+            //GetyDifferencial(GetPixels(new System.Drawing.Bitmap(blur)), yDiff);
+            ////GetXDifferencial(GetPixels(new System.Drawing.Bitmap(xDiff)), xxDiff);
+            ////GetyDifferencial(GetPixels(new System.Drawing.Bitmap(yDiff)), yyDiff);
+            ////CombineDirectionalImages(GetPixels(new System.Drawing.Bitmap(xxDiff)), GetPixels(new System.Drawing.Bitmap(yyDiff)), xxyyComb);
+            //CombineDirectionalImages(GetPixels(new System.Drawing.Bitmap(xDiff)), GetPixels(new System.Drawing.Bitmap(yDiff)), xyComb);
+            //GetDifferencial(GetPixels(new System.Drawing.Bitmap(blur)), xyComb);
             //FindZeroCrossings(GetPixels(new System.Drawing.Bitmap(xyComb)), ZeroCross, 3);
             //FindZeroCrossings(GetPixels(new System.Drawing.Bitmap(xxyyComb)), ZeroCrossXXYY, 2);
 
-            for (int i = 0; i< 7; i++)
-            {
-                string GetOboveTreshold = ProcessingFolder + string.Format("Threshold{0}-{1}.jpg", sigma1, i);
-                string GetOboveTreshold2nd = ProcessingFolder + string.Format("Threshold2nd{0}-{1}.jpg", sigma1, i);
-                //FindGreatestGradiant(GetPixels(new System.Drawing.Bitmap(xxyyComb)), GetOboveTreshold2nd, i);
-                FindGreatestGradiant(GetPixels(new System.Drawing.Bitmap(xyComb)), GetOboveTreshold, i);
-            }
+            //for (int i = 0; i< 7; i++)
+            //{
+            //    string GetOboveTreshold = ProcessingFolder + string.Format("Threshold{0}-{1}.jpg", sigma1, i);
+            //    string GetOboveTreshold2nd = ProcessingFolder + string.Format("Threshold2nd{0}-{1}.jpg", sigma1, i);
+            //    //FindGreatestGradiant(GetPixels(new System.Drawing.Bitmap(xxyyComb)), GetOboveTreshold2nd, i);
+            //    FindGreatestGradiant(GetPixels(new System.Drawing.Bitmap(lOG)), GetOboveTreshold, i);
+            //}
+            FindGreatestGradiant(GetPixels(new System.Drawing.Bitmap(lOG)), GetOboveTreshold, 0);
+            //FindZeroCrossings2(GetPixels(new System.Drawing.Bitmap(lOG)), ZeroCross, 0);
         }
 
         public void FindEdges_Click(object sender, RoutedEventArgs e)
@@ -270,6 +280,131 @@ namespace WpfApplication1.UI
             //PopupMessage("Done.");
         }
 
+
+        private void LOGX(System.Drawing.Color[,] Image, int Sigma, String ProcessFile)
+        {
+            LOG(Image, Sigma, true, false, ProcessFile);
+        }
+
+        private void LOGY(System.Drawing.Color[,] Image, int Sigma, String ProcessFile)
+        {
+            LOG(Image, Sigma, false, true, ProcessFile);
+        }
+
+
+        private void LOG(System.Drawing.Color[,] Image, int Sigma, bool DoX, bool DoY, String ProcessFile)
+        {
+
+            int width = Image.GetLength(0);
+            int height = Image.GetLength(1);
+
+            uint[] pixels = new uint[Image.Length];
+            WriteableBitmap bitmap = new WriteableBitmap(width, height, 96, 96, PixelFormats.Bgra32, null);
+
+            int xDist = Sigma * 3;
+            //if (Sigma % 2 != 0) xDist += 1;
+            int yDist = xDist;
+
+            double topValue = 0;
+
+            if (!DoY)
+            {
+                yDist = 0;
+            }
+            else
+            {
+                topValue = 3;
+            }
+            if (!DoX)
+            {
+                xDist = 0;
+            }
+            else
+            {
+                topValue += 3;
+            }
+
+            if (xDist + yDist == 0) topValue = 1;
+
+            int xCount = (xDist * 2) + 1;
+            int yCount = (yDist * 2) + 1;
+
+            double inverse = 1;
+            if (DoX && DoY)
+            {
+                inverse = 3.0 / (double)Sigma;
+            } else
+            {
+                inverse = 3.0 / Math.Sqrt(Sigma);
+            }
+
+            // double[] inverses = new double[(xCount * yCount) + 1];
+
+
+            // Parallel.For(1, inverses.Length, i =>
+            //{
+            //    inverses[i] = 1.0 / i;
+            //});
+
+            double[,] filter = GetLoGFilter(xDist, yDist, Sigma);
+
+            Parallel.For(0, width, x =>
+            {
+                for (int y = 0; y < height; y++)
+                {
+
+                    int pixelCount = (xDist * yCount) + 1;
+                    double r = HALF;
+                    double g = HALF;
+                    double b = HALF;
+                    double a = 255;
+
+                    for (int i = -xDist; i <= xDist; i++)
+                    {
+                        if (x + i >= 0 && x + i < width)
+                        {
+                            for (int j = -yDist; j <= yDist; j++)
+                            {
+                                if (y + j >= 0 && y + j < height)
+                                {
+                                    System.Drawing.Color pixel = Image[x + i, y + j];
+
+                                    double log = filter[i + xDist, j + yDist];
+
+                                    r += pixel.R * log;
+                                    g += pixel.G * log;
+                                    b += pixel.B * log;
+                                    //a += pixel.A * gauss;
+                                }
+                            }
+                        }
+                    }
+
+                    if (pixelCount > 0)
+                    {
+                        int r2 = Math.Min((int)(r * inverse), 255);
+                        int g2 = Math.Min((int)(g * inverse), 255);
+                        int b2 = Math.Min((int)(b * inverse), 255);
+                        System.Drawing.Color currentPixel = System.Drawing.Color.FromArgb(255, r2, g2, b2);
+                        pixels[y * width + x] = (uint)((currentPixel.A << 24) | (currentPixel.R << 16) | (currentPixel.G << 8) | (currentPixel.B << 0));
+                    }
+                    else
+                    {
+                        //This shouldn't ever happen
+                        throw new Exception("Pixel count 0.");
+                    }
+                }
+            });
+
+            bitmap.WritePixels(new Int32Rect(0, 0, width, height), pixels, width * 4, 0);
+
+            SaveImage(ProcessFile, bitmap.Clone());
+
+            ImageBitMap = bitmap;
+
+            //PopupMessage("Done.");
+        }
+
         private void GrayScale(System.Drawing.Color[,] Image, String ProcessFile)
         {
 
@@ -367,6 +502,52 @@ namespace WpfApplication1.UI
                     }
 
                     System.Drawing.Color currentPixel = System.Drawing.Color.FromArgb(a, p, p, p);
+                    pixels[y * width + x] = (uint)((currentPixel.A << 24) | (currentPixel.R << 16) | (currentPixel.G << 8) | (currentPixel.B << 0));
+                }
+            });
+
+            bitmap.WritePixels(new Int32Rect(0, 0, width, height), pixels, width * 4, 0);
+
+            SaveImage(OutPutFile, bitmap.Clone());
+
+            ImageBitMap = bitmap;
+
+        }
+
+        private void GetDifferencial(System.Drawing.Color[,] Image, String OutPutFile)
+        {
+            int width = Image.GetLength(0);
+            int height = Image.GetLength(1);
+
+            uint[] pixels = new uint[Image.Length];
+            WriteableBitmap bitmap = new WriteableBitmap(width, height, 96, 96, PixelFormats.Bgra32, null);
+
+
+            Parallel.For(0, width, x =>
+            {
+                for (int y = 0; y < height; y++)
+                {
+                    int r = 0;
+                    int g = 0;
+                    int b = HALF;
+                    int a = 255;
+
+                    System.Drawing.Color pixel1 = Image[x, y];
+
+                    if (y + 1 < height)
+                    {
+                        System.Drawing.Color pixel2 = Image[x, y + 1];
+
+                        g = Math.Max(Math.Min(HALF + (pixel2.R - pixel1.R), 255), 0);
+                    }
+
+                    if (x + 1 < width)
+                    {
+                        System.Drawing.Color pixel3 = Image[x + 1, y];
+
+                        r = Math.Max(Math.Min(HALF + (pixel3.R - pixel1.R), 255), 0);
+                    }
+                    System.Drawing.Color currentPixel = System.Drawing.Color.FromArgb(a, r, g, b);
                     pixels[y * width + x] = (uint)((currentPixel.A << 24) | (currentPixel.R << 16) | (currentPixel.G << 8) | (currentPixel.B << 0));
                 }
             });
@@ -546,6 +727,73 @@ namespace WpfApplication1.UI
                     //{
                     //    p = 255;
                     //}
+
+                    System.Drawing.Color currentPixel = System.Drawing.Color.FromArgb(a, p, p, p);
+                    pixels[y * width + x] = (uint)((currentPixel.A << 24) | (currentPixel.R << 16) | (currentPixel.G << 8) | (currentPixel.B << 0));
+                }
+            });
+
+            bitmap.WritePixels(new Int32Rect(0, 0, width, height), pixels, width * 4, 0);
+
+            SaveImage(OutPutFile, bitmap.Clone());
+
+            ImageBitMap = bitmap;
+
+        }
+
+        private void FindZeroCrossings2(System.Drawing.Color[,] Image, String OutPutFile, int Threshold = 1)
+        {
+            int width = Image.GetLength(0);
+            int height = Image.GetLength(1);
+
+            uint[] pixels = new uint[Image.Length];
+            WriteableBitmap bitmap = new WriteableBitmap(width, height, 96, 96, PixelFormats.Bgra32, null);
+
+            Parallel.For(0, width, x =>
+            {
+                for (int y = 0; y < height; y++)
+                {
+                    int p = 0;
+                    int a = 255;
+
+                    System.Drawing.Color Pixel = Image[x, y];
+
+                    int dxMin = 0, dyMin = 0, dxMax = 0, dyMax = 0;
+
+                    if (x - 1 >= 0)
+                    {
+                        dxMin = -1;
+                    }
+                    if (y - 1 >= 0)
+                    {
+                        dyMin = -1;
+                    }
+                    if (x + 1 < width)
+                    {
+                        dxMax = 1;
+                    }
+                    if (y + 1 < height)
+                    {
+                        dyMax = 1;
+                    }
+
+                    for (int dy = dyMin; dy < dyMax && p == 0; dy++)
+                    {
+                        for (int dx = dxMin; dx < dxMax && p == 0; dx++)
+                        {
+                            if (dy != 0 && dx != 0)
+                            {
+                                System.Drawing.Color Pixel2 = Image[x + dx, y + dy];
+
+                                if ((Pixel2.R > HALF && Pixel.R < HALF) || (Pixel2.G > HALF && Pixel.G < HALF) || (Pixel2.B > HALF && Pixel.B < HALF)
+                                    || (Pixel2.R < HALF && Pixel.R > HALF) || (Pixel2.G < HALF && Pixel.G > HALF) || (Pixel2.B < HALF && Pixel.B > HALF))
+                                {
+                                    p = 255;
+                                }
+
+                            }
+                        }
+                    }
 
                     System.Drawing.Color currentPixel = System.Drawing.Color.FromArgb(a, p, p, p);
                     pixels[y * width + x] = (uint)((currentPixel.A << 24) | (currentPixel.R << 16) | (currentPixel.G << 8) | (currentPixel.B << 0));
@@ -973,11 +1221,35 @@ namespace WpfApplication1.UI
             });
 
             return filter;
-        } 
+        }
+
+        double[,] GetLoGFilter(int XDist, int YDist, double o)
+        {
+            double[,] filter = new double[XDist * 2 + 1, YDist * 2 + 1];
+            double inv = 0.5 / (o * o);
+            double piInv = -1 / (Math.PI * o * o * o * o);
+            Parallel.For(-XDist, XDist + 1, x =>
+            {
+                for (int y = -YDist; y <= YDist; y++)
+                {
+                    double quotient = (double)(-(x * x + y * y)) * inv;
+
+                    //get laubplassian of gausian for x and y
+                    filter[XDist + x, YDist + y] = GetLoG(x, y, piInv, quotient);
+                }
+            });
+
+            return filter;
+        }
 
         double GetGaussian(int x, int y, double inverse)
         {
             return Math.Pow(Math.E, (double)(-(x * x + y * y)) * inverse);
+        }
+
+        double GetLoG(int x, int y, double piInv, double quotient)
+        {
+            return piInv * (1 + quotient) * Math.Pow(Math.E, quotient);
         }
 
         int GetPixelDist(System.Drawing.Color p1, System.Drawing.Color p2, bool getSign = false)
