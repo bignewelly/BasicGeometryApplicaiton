@@ -63,7 +63,7 @@ namespace WpfApplication1.UI
         public void BlurImage_Click(object sender, RoutedEventArgs e)
         {
             // get sigma values for bluring
-            int sigma1 = 3;
+            int sigma1 = 4;
             //int sigma2 = 10;
 
             // get file names
@@ -113,7 +113,7 @@ namespace WpfApplication1.UI
             //    FindGreatestGradiant(GetPixels(new System.Drawing.Bitmap(lOG)), GetOboveTreshold, i);
             //}
             FindGreatestGradiant(GetPixels(new System.Drawing.Bitmap(lOG)), GetOboveTreshold, 0);
-            //FindZeroCrossings2(GetPixels(new System.Drawing.Bitmap(lOG)), ZeroCross, 0);
+            FindZeroCrossings2(GetPixels(new System.Drawing.Bitmap(lOG)), ZeroCross, 0);
         }
 
         public void FindEdges_Click(object sender, RoutedEventArgs e)
@@ -332,7 +332,7 @@ namespace WpfApplication1.UI
             double inverse = 1;
             if (DoX && DoY)
             {
-                inverse = 3.0 / (double)Sigma;
+                inverse = 1.0;
             } else
             {
                 inverse = 3.0 / Math.Sqrt(Sigma);
@@ -382,9 +382,9 @@ namespace WpfApplication1.UI
 
                     if (pixelCount > 0)
                     {
-                        int r2 = Math.Min((int)(r * inverse), 255);
-                        int g2 = Math.Min((int)(g * inverse), 255);
-                        int b2 = Math.Min((int)(b * inverse), 255);
+                        int r2 = Math.Min((int)(r), 255);
+                        int g2 = Math.Min((int)(g), 255);
+                        int b2 = Math.Min((int)(b), 255);
                         System.Drawing.Color currentPixel = System.Drawing.Color.FromArgb(255, r2, g2, b2);
                         pixels[y * width + x] = (uint)((currentPixel.A << 24) | (currentPixel.R << 16) | (currentPixel.G << 8) | (currentPixel.B << 0));
                     }
@@ -777,9 +777,9 @@ namespace WpfApplication1.UI
                         dyMax = 1;
                     }
 
-                    for (int dy = dyMin; dy < dyMax && p == 0; dy++)
+                    for (int dy = dyMin; dy <= dyMax && p == 0; dy++)
                     {
-                        for (int dx = dxMin; dx < dxMax && p == 0; dx++)
+                        for (int dx = dxMin; dx <= dxMax && p == 0; dx++)
                         {
                             if (dy != 0 && dx != 0)
                             {
