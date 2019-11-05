@@ -63,7 +63,7 @@ namespace WpfApplication1.UI
         public void BlurImage_Click(object sender, RoutedEventArgs e)
         {
             // get sigma values for bluring
-            int sigma1 = 4;
+            int sigma1 = 1;
             //int sigma2 = 10;
 
             // get file names
@@ -72,6 +72,7 @@ namespace WpfApplication1.UI
             string xLOG = ProcessingFolder + string.Format("xLOG{0}.jpg", sigma1);
             string yLOG = ProcessingFolder + string.Format("yLOG{0}.jpg", sigma1);
             string lOG = ProcessingFolder + string.Format("lOG{0}.jpg", sigma1);
+            string ssd = ProcessingFolder + string.Format("ssd{0}.jpg", sigma1);
             string xBlur = ProcessingFolder + string.Format("xBlur{0}.jpg", sigma1);
             string yBlur = ProcessingFolder + string.Format("yBlur{0}.jpg", sigma1);
             string blur = ProcessingFolder + string.Format("blur{0}.jpg", sigma1);
@@ -90,7 +91,8 @@ namespace WpfApplication1.UI
             //var pixels = GetPixels(new System.Drawing.Bitmap(ImageFile));
             //LOGX(pixels, sigma1, xLOG);
             //LOGY(pixels, sigma1, yLOG);
-            LOG(GetPixels(new System.Drawing.Bitmap(ImageFile)), sigma1, true, true, lOG);
+            //LOG(GetPixels(new System.Drawing.Bitmap(ImageFile)), sigma1, true, true, lOG);
+            SSD(GetPixels(new System.Drawing.Bitmap(ImageFile)), sigma1, ssd);
             //BlurImageX(GetPixels(new System.Drawing.Bitmap(grayScale)), sigma1, xBlur);
             //BlurImageY(GetPixels(new System.Drawing.Bitmap(xBlur)), sigma1, blur);
             //BlurImage(GetPixels(new System.Drawing.Bitmap(ImageFile)), sigma2, file2);
@@ -112,8 +114,8 @@ namespace WpfApplication1.UI
             //    //FindGreatestGradiant(GetPixels(new System.Drawing.Bitmap(xxyyComb)), GetOboveTreshold2nd, i);
             //    FindGreatestGradiant(GetPixels(new System.Drawing.Bitmap(lOG)), GetOboveTreshold, i);
             //}
-            FindGreatestGradiant(GetPixels(new System.Drawing.Bitmap(lOG)), GetOboveTreshold, 0);
-            FindZeroCrossings2(GetPixels(new System.Drawing.Bitmap(lOG)), ZeroCross, 0);
+            //FindGreatestGradiant(GetPixels(new System.Drawing.Bitmap(lOG)), GetOboveTreshold, 0);
+            //FindZeroCrossings2(GetPixels(new System.Drawing.Bitmap(lOG)), ZeroCross, 0);
         }
 
         public void FindEdges_Click(object sender, RoutedEventArgs e)
@@ -385,6 +387,89 @@ namespace WpfApplication1.UI
                         int r2 = Math.Min((int)(r), 255);
                         int g2 = Math.Min((int)(g), 255);
                         int b2 = Math.Min((int)(b), 255);
+                        System.Drawing.Color currentPixel = System.Drawing.Color.FromArgb(255, r2, g2, b2);
+                        pixels[y * width + x] = (uint)((currentPixel.A << 24) | (currentPixel.R << 16) | (currentPixel.G << 8) | (currentPixel.B << 0));
+                    }
+                    else
+                    {
+                        //This shouldn't ever happen
+                        throw new Exception("Pixel count 0.");
+                    }
+                }
+            });
+
+            bitmap.WritePixels(new Int32Rect(0, 0, width, height), pixels, width * 4, 0);
+
+            SaveImage(ProcessFile, bitmap.Clone());
+
+            ImageBitMap = bitmap;
+
+            //PopupMessage("Done.");
+        }
+
+        private void SSD(System.Drawing.Color[,] Image, int Sigma, String ProcessFile)
+        {
+
+            int width = Image.GetLength(0);
+            int height = Image.GetLength(1);
+
+            uint[] pixels = new uint[Image.Length];
+            WriteableBitmap bitmap = new WriteableBitmap(width, height, 96, 96, PixelFormats.Bgra32, null);
+
+            int xDist = Sigma * 3;
+            //if (Sigma % 2 != 0) xDist += 1;
+            int yDist = xDist;
+
+            int xCount = (xDist * 2) + 1;
+            int yCount = (yDist * 2) + 1;
+
+            double inv = 1.0 / (double)(xCount * yCount);
+
+            double[,] filter = GetGaussianFilter(xDist, yDist, Sigma);
+
+            Parallel.For(0, width, x =>
+            {
+                for (int y = 0; y < height; y++)
+                {
+
+                    int pixelCount = (xDist * yCount) + 1;
+                    double r = HALF;
+                    double g = HALF;
+                    double b = HALF;
+                    double a = 255;
+
+                    for (int i = -xDist; i <= xDist; i++)
+                    {
+                        if (x + i >= 0 && x + i < width)
+                        {
+                            System.Drawing.Color pixel = Image[x, y];
+                            for (int j = -yDist; j <= yDist; j++)
+                            {
+                                if (y + j >= 0 && y + j < height)
+                                {
+                                    System.Drawing.Color pixel2 = Image[x + i, y + j];
+
+                                    double gauss = filter[i + xDist, j + yDist];
+
+                                    // Get pixel differences
+                                    int rDiff = pixel2.R - pixel.R;
+                                    int gDiff = pixel2.G - pixel.G;
+                                    int bDiff = pixel2.B - pixel.B;
+
+                                    r += rDiff * rDiff * gauss;
+                                    g += gDiff * gDiff * gauss;
+                                    b += bDiff * bDiff * gauss;
+                                    //a += pixel.A * gauss;
+                                }
+                            }
+                        }
+                    }
+
+                    if (pixelCount > 0)
+                    {
+                        int r2 = Math.Min((int)(r * inv), 255);
+                        int g2 = Math.Min((int)(g * inv), 255);
+                        int b2 = Math.Min((int)(b * inv), 255);
                         System.Drawing.Color currentPixel = System.Drawing.Color.FromArgb(255, r2, g2, b2);
                         pixels[y * width + x] = (uint)((currentPixel.A << 24) | (currentPixel.R << 16) | (currentPixel.G << 8) | (currentPixel.B << 0));
                     }
@@ -1272,5 +1357,15 @@ namespace WpfApplication1.UI
 
             return (int)Math.Sqrt(r * r + g * g);
         }
+
+        double GetDeterminate(double[,] matrix)
+        {
+            if (matrix.GetLength(0) != 2 || matrix.GetLength(1) != 2)
+            {
+                throw new Exception("Expected 2X2 matrix.");
+            }
+
+            return (matrix[0, 0] * matrix[1, 1] - matrix[1, 0] * matrix[0, 1]);
+        } 
     }
 }
