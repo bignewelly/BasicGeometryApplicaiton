@@ -86,6 +86,7 @@ namespace WpfApplication1.UI
             string ZeroCross = ProcessingFolder + string.Format("ZeroCross{0}.jpg", sigma1);
             string ZeroCrossXXYY = ProcessingFolder + string.Format("ZeroCrossXXYY{0}.jpg", sigma1);
             string GetOboveTreshold = ProcessingFolder + string.Format("Threshold{0}.jpg", sigma1);
+            string GetMaxima = ProcessingFolder + string.Format("Maxima{0}.jpg", sigma1);
 
             //GrayScale(GetPixels(new System.Drawing.Bitmap(ImageFile)), grayScale);
             //var pixels = GetPixels(new System.Drawing.Bitmap(ImageFile));
@@ -93,6 +94,7 @@ namespace WpfApplication1.UI
             //LOGY(pixels, sigma1, yLOG);
             //LOG(GetPixels(new System.Drawing.Bitmap(ImageFile)), sigma1, true, true, lOG);
             SSD(GetPixels(new System.Drawing.Bitmap(ImageFile)), sigma1, ssd);
+            FindLocalMaxima(GetPixels(new System.Drawing.Bitmap(ImageFile)), GetMaxima, 0);
             //BlurImageX(GetPixels(new System.Drawing.Bitmap(grayScale)), sigma1, xBlur);
             //BlurImageY(GetPixels(new System.Drawing.Bitmap(xBlur)), sigma1, blur);
             //BlurImage(GetPixels(new System.Drawing.Bitmap(ImageFile)), sigma2, file2);
@@ -1015,6 +1017,67 @@ namespace WpfApplication1.UI
                     }
 
                         System.Drawing.Color currentPixel = System.Drawing.Color.FromArgb(a, p, p, p);
+                    pixels[y * width + x] = (uint)((currentPixel.A << 24) | (currentPixel.R << 16) | (currentPixel.G << 8) | (currentPixel.B << 0));
+                }
+            });
+
+            bitmap.WritePixels(new Int32Rect(0, 0, width, height), pixels, width * 4, 0);
+
+            SaveImage(OutPutFile, bitmap.Clone());
+
+            ImageBitMap = bitmap;
+
+        }
+
+        private void FindLocalMaxima(System.Drawing.Color[,] Image, String OutPutFile, int Threshold = 1)
+        {
+            int width = Image.GetLength(0);
+            int height = Image.GetLength(1);
+
+            uint[] pixels = new uint[Image.Length];
+            WriteableBitmap bitmap = new WriteableBitmap(width, height, 96, 96, PixelFormats.Bgra32, null);
+
+            Parallel.For(0, width, x =>
+            {
+                for (int y = 0; y < height; y++)
+                {
+                    int p = 0;
+                    int a = 255;
+
+                    System.Drawing.Color Pixel = Image[x, y];
+
+                    if (Pixel.R >= Threshold || Pixel.G >= Threshold || Pixel.B >= Threshold )
+                    {
+
+                        if (y - 1 >= 0 && y + 1 < height && x - 1 >= 0 && x + 1 < width)
+                        {
+                            bool isExtrema = true;
+                            for (int u = x - 1; u <= x + 1 && isExtrema; u++)
+                            {
+                                for (int v = y - 1; v <= y + 1 && isExtrema; v++)
+                                {
+                                    if (u != x && v != y)
+                                    {
+                                        System.Drawing.Color pixel2 = Image[u, v];
+
+                                        if ((Pixel.R != pixel2.R && Pixel.G != pixel2.G && Pixel.B != pixel2.B) && (Pixel.R >= pixel2.R && Pixel.G >= pixel2.G && Pixel.B >= pixel2.B))
+                                        {
+                                            isExtrema = true;
+                                        } else
+                                        {
+                                            isExtrema = false;
+                                        }
+
+                                    }
+                                }
+                            }
+
+                            if (isExtrema) p = 255;
+                        }
+
+                    }
+
+                    System.Drawing.Color currentPixel = System.Drawing.Color.FromArgb(a, p, p, p);
                     pixels[y * width + x] = (uint)((currentPixel.A << 24) | (currentPixel.R << 16) | (currentPixel.G << 8) | (currentPixel.B << 0));
                 }
             });
