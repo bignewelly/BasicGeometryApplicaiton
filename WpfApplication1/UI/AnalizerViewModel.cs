@@ -63,7 +63,7 @@ namespace WpfApplication1.UI
         public void BlurImage_Click(object sender, RoutedEventArgs e)
         {
             // get sigma values for bluring
-            int sigma1 = 1;
+            int sigma1 = 2;
             //int sigma2 = 10;
 
             // get file names
@@ -93,8 +93,11 @@ namespace WpfApplication1.UI
             //LOGX(pixels, sigma1, xLOG);
             //LOGY(pixels, sigma1, yLOG);
             //LOG(GetPixels(new System.Drawing.Bitmap(ImageFile)), sigma1, true, true, lOG);
-            SSD(GetPixels(new System.Drawing.Bitmap(ImageFile)), sigma1, ssd);
-            FindLocalMaxima(GetPixels(new System.Drawing.Bitmap(ImageFile)), GetMaxima, 0);
+            var sSD = SSD(GetPixels(new System.Drawing.Bitmap(ImageFile)), sigma1);
+            //SavePixelsToFile(sSD, ssd);
+            var localMax = FindLocalMaxima(sSD, 0);
+
+            SavePixelsToFile(localMax, GetMaxima);
             //BlurImageX(GetPixels(new System.Drawing.Bitmap(grayScale)), sigma1, xBlur);
             //BlurImageY(GetPixels(new System.Drawing.Bitmap(xBlur)), sigma1, blur);
             //BlurImage(GetPixels(new System.Drawing.Bitmap(ImageFile)), sigma2, file2);
@@ -170,24 +173,23 @@ namespace WpfApplication1.UI
             return matrix;
         }
 
-        private void BlurImageX(System.Drawing.Color[,] Image, int Sigma, String ProcessFile)
+        private void BlurImageX(System.Drawing.Color[,] Image, int Sigma)
         {
-            BlurImage(Image, Sigma, true, false, ProcessFile);
+            BlurImage(Image, Sigma, true, false);
         }
 
-        private void BlurImageY(System.Drawing.Color[,] Image, int Sigma, String ProcessFile)
+        private void BlurImageY(System.Drawing.Color[,] Image, int Sigma)
         {
-            BlurImage(Image, Sigma, false, true, ProcessFile);
+            BlurImage(Image, Sigma, false, true);
         }
 
-        private void BlurImage(System.Drawing.Color[,] Image, int Sigma, bool DoX, bool DoY, String ProcessFile)
+        private System.Drawing.Color[,] BlurImage(System.Drawing.Color[,] Image, int Sigma, bool DoX, bool DoY)
         {
 
             int width = Image.GetLength(0);
             int height = Image.GetLength(1);
 
-            uint[] pixels = new uint[Image.Length];
-            WriteableBitmap bitmap = new WriteableBitmap(width, height, 96, 96, PixelFormats.Bgra32, null);
+            System.Drawing.Color[,] pixels = new System.Drawing.Color[width, height];
 
             int xDist = Sigma * 3;
             //if (Sigma % 2 != 0) xDist += 1;
@@ -264,8 +266,7 @@ namespace WpfApplication1.UI
                     if (pixelCount > 0)
                     {
                         int p = Math.Min((int)(r * inverse), 255);
-                        System.Drawing.Color currentPixel = System.Drawing.Color.FromArgb(255, p, p, p);
-                        pixels[y * width + x] = (uint)((currentPixel.A << 24) | (currentPixel.R << 16) | (currentPixel.G << 8) |(currentPixel.B << 0));
+                        pixels[x, y] = System.Drawing.Color.FromArgb(255, p, p, p);
                     }
                     else
                     {
@@ -275,35 +276,28 @@ namespace WpfApplication1.UI
                 }
             });
 
-            bitmap.WritePixels(new Int32Rect(0, 0, width, height), pixels, width * 4, 0);
-
-            SaveImage(ProcessFile, bitmap.Clone());
-
-            ImageBitMap = bitmap;
-
-            //PopupMessage("Done.");
+            return pixels;
         }
 
 
-        private void LOGX(System.Drawing.Color[,] Image, int Sigma, String ProcessFile)
+        private void LOGX(System.Drawing.Color[,] Image, int Sigma)
         {
-            LOG(Image, Sigma, true, false, ProcessFile);
+            LOG(Image, Sigma, true, false);
         }
 
-        private void LOGY(System.Drawing.Color[,] Image, int Sigma, String ProcessFile)
+        private void LOGY(System.Drawing.Color[,] Image, int Sigma)
         {
-            LOG(Image, Sigma, false, true, ProcessFile);
+            LOG(Image, Sigma, false, true);
         }
 
 
-        private void LOG(System.Drawing.Color[,] Image, int Sigma, bool DoX, bool DoY, String ProcessFile)
+        private System.Drawing.Color[,] LOG(System.Drawing.Color[,] Image, int Sigma, bool DoX, bool DoY)
         {
 
             int width = Image.GetLength(0);
             int height = Image.GetLength(1);
 
-            uint[] pixels = new uint[Image.Length];
-            WriteableBitmap bitmap = new WriteableBitmap(width, height, 96, 96, PixelFormats.Bgra32, null);
+            System.Drawing.Color[,] pixels = new System.Drawing.Color[width, height];
 
             int xDist = Sigma * 3;
             //if (Sigma % 2 != 0) xDist += 1;
@@ -389,8 +383,7 @@ namespace WpfApplication1.UI
                         int r2 = Math.Min((int)(r), 255);
                         int g2 = Math.Min((int)(g), 255);
                         int b2 = Math.Min((int)(b), 255);
-                        System.Drawing.Color currentPixel = System.Drawing.Color.FromArgb(255, r2, g2, b2);
-                        pixels[y * width + x] = (uint)((currentPixel.A << 24) | (currentPixel.R << 16) | (currentPixel.G << 8) | (currentPixel.B << 0));
+                        pixels[x, y] = System.Drawing.Color.FromArgb(255, r2, g2, b2);
                     }
                     else
                     {
@@ -400,23 +393,16 @@ namespace WpfApplication1.UI
                 }
             });
 
-            bitmap.WritePixels(new Int32Rect(0, 0, width, height), pixels, width * 4, 0);
-
-            SaveImage(ProcessFile, bitmap.Clone());
-
-            ImageBitMap = bitmap;
-
-            //PopupMessage("Done.");
+            return pixels;
         }
 
-        private void SSD(System.Drawing.Color[,] Image, int Sigma, String ProcessFile)
+        private PixelValue[,] SSD(System.Drawing.Color[,] Image, int Sigma)
         {
 
             int width = Image.GetLength(0);
             int height = Image.GetLength(1);
 
-            uint[] pixels = new uint[Image.Length];
-            WriteableBitmap bitmap = new WriteableBitmap(width, height, 96, 96, PixelFormats.Bgra32, null);
+            PixelValue[,] pixels = new PixelValue[width, height];
 
             int xDist = Sigma * 3;
             //if (Sigma % 2 != 0) xDist += 1;
@@ -469,11 +455,14 @@ namespace WpfApplication1.UI
 
                     if (pixelCount > 0)
                     {
-                        int r2 = Math.Min((int)(r * inv), 255);
-                        int g2 = Math.Min((int)(g * inv), 255);
-                        int b2 = Math.Min((int)(b * inv), 255);
-                        System.Drawing.Color currentPixel = System.Drawing.Color.FromArgb(255, r2, g2, b2);
-                        pixels[y * width + x] = (uint)((currentPixel.A << 24) | (currentPixel.R << 16) | (currentPixel.G << 8) | (currentPixel.B << 0));
+                        int r2 = (int)(r * inv);
+                        int g2 = (int)(g * inv);
+                        int b2 = (int)(b * inv);
+                        PixelValue val = new PixelValue();
+                        val.R = r2;
+                        val.G = g2;
+                        val.B = b2;
+                        pixels[x,y] = val;
                     }
                     else
                     {
@@ -483,16 +472,10 @@ namespace WpfApplication1.UI
                 }
             });
 
-            bitmap.WritePixels(new Int32Rect(0, 0, width, height), pixels, width * 4, 0);
-
-            SaveImage(ProcessFile, bitmap.Clone());
-
-            ImageBitMap = bitmap;
-
-            //PopupMessage("Done.");
+            return pixels;
         }
 
-        private void GrayScale(System.Drawing.Color[,] Image, String ProcessFile)
+        private System.Drawing.Color[,] GrayScale(System.Drawing.Color[,] Image)
         {
 
             int width = Image.GetLength(0);
@@ -503,8 +486,7 @@ namespace WpfApplication1.UI
             int maxDist = GetPixelDist(MaxPixel, OriginPixel);
             double pixelInverse = (double)255 / (double)maxDist;
 
-            uint[] pixels = new uint[Image.Length];
-            WriteableBitmap bitmap = new WriteableBitmap(width, height, 96, 96, PixelFormats.Bgra32, null);
+            System.Drawing.Color[,] pixels = new System.Drawing.Color[width, height];
 
             Parallel.For(0, width, x =>
             {
@@ -514,27 +496,19 @@ namespace WpfApplication1.UI
 
                     int p = (int) ((double)GetPixelDist(pixel, OriginPixel) * pixelInverse);
 
-                    System.Drawing.Color currentPixel = System.Drawing.Color.FromArgb(255, p, p, p);
-                    pixels[y * width + x] = (uint)((currentPixel.A << 24) | (currentPixel.R << 16) | (currentPixel.G << 8) | (currentPixel.B << 0));
+                    pixels[x, y] = System.Drawing.Color.FromArgb(255, p, p, p);
                 }
             });
 
-            bitmap.WritePixels(new Int32Rect(0, 0, width, height), pixels, width * 4, 0);
-
-            SaveImage(ProcessFile, bitmap.Clone());
-
-            ImageBitMap = bitmap;
-
-            //PopupMessage("Done.");
+            return pixels;
         }
 
-        private void GetXDifferencial(System.Drawing.Color[,] Image, String OutPutFile)
+        private System.Drawing.Color[,] GetXDifferencial(System.Drawing.Color[,] Image)
         {
             int width = Image.GetLength(0);
             int height = Image.GetLength(1);
 
-            uint[] pixels = new uint[Image.Length];
-            WriteableBitmap bitmap = new WriteableBitmap(width, height, 96, 96, PixelFormats.Bgra32, null);
+            System.Drawing.Color[,] pixels = new System.Drawing.Color[width, height];
 
             Parallel.For(0, width, x =>
             {
@@ -551,27 +525,19 @@ namespace WpfApplication1.UI
                         p = Math.Max(Math.Min(HALF + (pixel2.R - pixel1.R), 255), 0);
                     }
 
-                    System.Drawing.Color currentPixel = System.Drawing.Color.FromArgb(a, p, p, p);
-                    pixels[y * width + x] = (uint)((currentPixel.A << 24) | (currentPixel.R << 16) | (currentPixel.G << 8) | (currentPixel.B << 0));
+                    pixels[x, y] = System.Drawing.Color.FromArgb(a, p, p, p);
                 }
             });
 
-            bitmap.WritePixels(new Int32Rect(0, 0, width, height), pixels, width * 4, 0);
-
-            SaveImage(OutPutFile, bitmap.Clone());
-
-            ImageBitMap = bitmap;
-
+            return pixels;
         }
 
-        private void GetyDifferencial(System.Drawing.Color[,] Image, String OutPutFile)
+        private System.Drawing.Color[,] GetyDifferencial(System.Drawing.Color[,] Image)
         {
             int width = Image.GetLength(0);
             int height = Image.GetLength(1);
 
-            uint[] pixels = new uint[Image.Length];
-            WriteableBitmap bitmap = new WriteableBitmap(width, height, 96, 96, PixelFormats.Bgra32, null);
-
+            System.Drawing.Color[,] pixels = new System.Drawing.Color[width, height];
 
             Parallel.For(0, width, x =>
             {
@@ -588,27 +554,19 @@ namespace WpfApplication1.UI
                         p = Math.Max(Math.Min(HALF + (pixel2.R - pixel1.R), 255), 0);
                     }
 
-                    System.Drawing.Color currentPixel = System.Drawing.Color.FromArgb(a, p, p, p);
-                    pixels[y * width + x] = (uint)((currentPixel.A << 24) | (currentPixel.R << 16) | (currentPixel.G << 8) | (currentPixel.B << 0));
+                    pixels[x, y] = System.Drawing.Color.FromArgb(a, p, p, p);
                 }
             });
 
-            bitmap.WritePixels(new Int32Rect(0, 0, width, height), pixels, width * 4, 0);
-
-            SaveImage(OutPutFile, bitmap.Clone());
-
-            ImageBitMap = bitmap;
-
+            return pixels;
         }
 
-        private void GetDifferencial(System.Drawing.Color[,] Image, String OutPutFile)
+        private System.Drawing.Color[,] GetDifferencial(System.Drawing.Color[,] Image)
         {
             int width = Image.GetLength(0);
             int height = Image.GetLength(1);
 
-            uint[] pixels = new uint[Image.Length];
-            WriteableBitmap bitmap = new WriteableBitmap(width, height, 96, 96, PixelFormats.Bgra32, null);
-
+            System.Drawing.Color[,] pixels = new System.Drawing.Color[width, height];
 
             Parallel.For(0, width, x =>
             {
@@ -634,26 +592,19 @@ namespace WpfApplication1.UI
 
                         r = Math.Max(Math.Min(HALF + (pixel3.R - pixel1.R), 255), 0);
                     }
-                    System.Drawing.Color currentPixel = System.Drawing.Color.FromArgb(a, r, g, b);
-                    pixels[y * width + x] = (uint)((currentPixel.A << 24) | (currentPixel.R << 16) | (currentPixel.G << 8) | (currentPixel.B << 0));
+                    pixels[x, y] = System.Drawing.Color.FromArgb(a, r, g, b);
                 }
             });
 
-            bitmap.WritePixels(new Int32Rect(0, 0, width, height), pixels, width * 4, 0);
-
-            SaveImage(OutPutFile, bitmap.Clone());
-
-            ImageBitMap = bitmap;
-
+            return pixels;
         }
 
-        private void FindZeroCrossings(System.Drawing.Color[,] Image, String OutPutFile, int Threshold = 1)
+        private System.Drawing.Color[,] FindZeroCrossings(System.Drawing.Color[,] Image, int Threshold = 1)
         {
             int width = Image.GetLength(0);
             int height = Image.GetLength(1);
 
-            uint[] pixels = new uint[Image.Length];
-            WriteableBitmap bitmap = new WriteableBitmap(width, height, 96, 96, PixelFormats.Bgra32, null);
+            System.Drawing.Color[,] pixels = new System.Drawing.Color[width, height];
 
             const double oneThird = 1.0 / 3.0;
 
@@ -815,26 +766,19 @@ namespace WpfApplication1.UI
                     //    p = 255;
                     //}
 
-                    System.Drawing.Color currentPixel = System.Drawing.Color.FromArgb(a, p, p, p);
-                    pixels[y * width + x] = (uint)((currentPixel.A << 24) | (currentPixel.R << 16) | (currentPixel.G << 8) | (currentPixel.B << 0));
+                    pixels[x, y] = System.Drawing.Color.FromArgb(a, p, p, p);
                 }
             });
 
-            bitmap.WritePixels(new Int32Rect(0, 0, width, height), pixels, width * 4, 0);
-
-            SaveImage(OutPutFile, bitmap.Clone());
-
-            ImageBitMap = bitmap;
-
+            return pixels;
         }
 
-        private void FindZeroCrossings2(System.Drawing.Color[,] Image, String OutPutFile, int Threshold = 1)
+        private System.Drawing.Color[,] FindZeroCrossings2(System.Drawing.Color[,] Image, int Threshold = 1)
         {
             int width = Image.GetLength(0);
             int height = Image.GetLength(1);
 
-            uint[] pixels = new uint[Image.Length];
-            WriteableBitmap bitmap = new WriteableBitmap(width, height, 96, 96, PixelFormats.Bgra32, null);
+            System.Drawing.Color[,] pixels = new System.Drawing.Color[width, height];
 
             Parallel.For(0, width, x =>
             {
@@ -882,26 +826,18 @@ namespace WpfApplication1.UI
                         }
                     }
 
-                    System.Drawing.Color currentPixel = System.Drawing.Color.FromArgb(a, p, p, p);
-                    pixels[y * width + x] = (uint)((currentPixel.A << 24) | (currentPixel.R << 16) | (currentPixel.G << 8) | (currentPixel.B << 0));
+                    pixels[x, y] = System.Drawing.Color.FromArgb(a, p, p, p);
                 }
             });
-
-            bitmap.WritePixels(new Int32Rect(0, 0, width, height), pixels, width * 4, 0);
-
-            SaveImage(OutPutFile, bitmap.Clone());
-
-            ImageBitMap = bitmap;
-
+            return pixels;
         }
 
-        private void FindGreatestGradiant(System.Drawing.Color[,] Image, String OutPutFile, int Threshold = 1)
+        private System.Drawing.Color[,] FindGreatestGradiant(System.Drawing.Color[,] Image, int Threshold = 1)
         {
             int width = Image.GetLength(0);
             int height = Image.GetLength(1);
 
-            uint[] pixels = new uint[Image.Length];
-            WriteableBitmap bitmap = new WriteableBitmap(width, height, 96, 96, PixelFormats.Bgra32, null);
+            System.Drawing.Color[,] pixels = new System.Drawing.Color[width, height];
 
             System.Drawing.Color halfPix = System.Drawing.Color.FromArgb(255, HALF, HALF, HALF);
             System.Drawing.Color orig = System.Drawing.Color.FromArgb(255, 0, 0, 0);
@@ -1016,26 +952,18 @@ namespace WpfApplication1.UI
                         if (isExtrema) p = 255;
                     }
 
-                        System.Drawing.Color currentPixel = System.Drawing.Color.FromArgb(a, p, p, p);
-                    pixels[y * width + x] = (uint)((currentPixel.A << 24) | (currentPixel.R << 16) | (currentPixel.G << 8) | (currentPixel.B << 0));
+                    pixels[x, y] = System.Drawing.Color.FromArgb(a, p, p, p);
                 }
             });
-
-            bitmap.WritePixels(new Int32Rect(0, 0, width, height), pixels, width * 4, 0);
-
-            SaveImage(OutPutFile, bitmap.Clone());
-
-            ImageBitMap = bitmap;
-
+            return pixels;
         }
 
-        private void FindLocalMaxima(System.Drawing.Color[,] Image, String OutPutFile, int Threshold = 1)
+        private System.Drawing.Color[,] FindLocalMaxima(PixelValue[,] Image, int Threshold = 1)
         {
             int width = Image.GetLength(0);
             int height = Image.GetLength(1);
 
-            uint[] pixels = new uint[Image.Length];
-            WriteableBitmap bitmap = new WriteableBitmap(width, height, 96, 96, PixelFormats.Bgra32, null);
+            System.Drawing.Color[,] pixels = new System.Drawing.Color[width, height];
 
             Parallel.For(0, width, x =>
             {
@@ -1044,7 +972,7 @@ namespace WpfApplication1.UI
                     int p = 0;
                     int a = 255;
 
-                    System.Drawing.Color Pixel = Image[x, y];
+                    PixelValue Pixel = Image[x, y];
 
                     if (Pixel.R >= Threshold || Pixel.G >= Threshold || Pixel.B >= Threshold )
                     {
@@ -1056,9 +984,9 @@ namespace WpfApplication1.UI
                             {
                                 for (int v = y - 1; v <= y + 1 && isExtrema; v++)
                                 {
-                                    if (u != x && v != y)
+                                    if (!(u == x && v == y))
                                     {
-                                        System.Drawing.Color pixel2 = Image[u, v];
+                                        PixelValue pixel2 = Image[u, v];
 
                                         if ((Pixel.R != pixel2.R && Pixel.G != pixel2.G && Pixel.B != pixel2.B) && (Pixel.R >= pixel2.R && Pixel.G >= pixel2.G && Pixel.B >= pixel2.B))
                                         {
@@ -1077,20 +1005,13 @@ namespace WpfApplication1.UI
 
                     }
 
-                    System.Drawing.Color currentPixel = System.Drawing.Color.FromArgb(a, p, p, p);
-                    pixels[y * width + x] = (uint)((currentPixel.A << 24) | (currentPixel.R << 16) | (currentPixel.G << 8) | (currentPixel.B << 0));
+                    pixels[x, y] = System.Drawing.Color.FromArgb(a, p, p, p);
                 }
             });
-
-            bitmap.WritePixels(new Int32Rect(0, 0, width, height), pixels, width * 4, 0);
-
-            SaveImage(OutPutFile, bitmap.Clone());
-
-            ImageBitMap = bitmap;
-
+            return pixels;
         }
 
-        private void CombineDirectionalImages(System.Drawing.Color[,] ImageX, System.Drawing.Color[,] ImageY, String OutPutFile)
+        private System.Drawing.Color[,] CombineDirectionalImages(System.Drawing.Color[,] ImageX, System.Drawing.Color[,] ImageY)
         {
 
             int widthX = ImageX.GetLength(0);
@@ -1099,8 +1020,7 @@ namespace WpfApplication1.UI
             int widthY = ImageY.GetLength(0);
             int heightY = ImageY.GetLength(1);
 
-            uint[] pixels = new uint[ImageX.Length];
-            WriteableBitmap bitmap = new WriteableBitmap(widthX, heightX, 96, 96, PixelFormats.Bgra32, null);
+            System.Drawing.Color[,] pixels = new System.Drawing.Color[Math.Max(widthX, widthY), Math.Max(heightX, heightY)];
 
             Parallel.For(0, Math.Min(widthX, widthY), x =>
             {
@@ -1116,21 +1036,14 @@ namespace WpfApplication1.UI
 
                     byte a = 255;
 
-                    System.Drawing.Color currentPixel = System.Drawing.Color.FromArgb((int)(a), r, g, b);
-                    pixels[y * widthX + x] = (uint)((currentPixel.A << 24) | (currentPixel.R << 16) | (currentPixel.G << 8) | (currentPixel.B << 0));
+                    pixels[x, y] = System.Drawing.Color.FromArgb((int)(a), r, g, b);
                 }
             });
 
-            bitmap.WritePixels(new Int32Rect(0, 0, widthX, heightX), pixels, widthX * 4, 0);
-
-            SaveImage(OutPutFile, bitmap.Clone());
-
-            ImageBitMap = bitmap;
-
-            //PopupMessage("Done.");
+            return pixels;
         }
 
-        private void CombineImages(System.Drawing.Color[,] Image1, System.Drawing.Color[,] Image2, byte Threshold, String OutPutFile)
+        private System.Drawing.Color[,] CombineImages(System.Drawing.Color[,] Image1, System.Drawing.Color[,] Image2, byte Threshold)
         {
 
             int width1 = Image1.GetLength(0);
@@ -1139,8 +1052,7 @@ namespace WpfApplication1.UI
             int width2 = Image2.GetLength(0);
             int height2 = Image2.GetLength(1);
 
-            uint[] pixels = new uint[Image1.Length];
-            WriteableBitmap bitmap = new WriteableBitmap(width1, height1, 96, 96, PixelFormats.Bgra32, null);
+            System.Drawing.Color[,] pixels = new System.Drawing.Color[Math.Max(width1, width2), Math.Max(height1, height2)];
 
             Parallel.For(0, Math.Min(width1, width2), x =>
             {
@@ -1171,21 +1083,14 @@ namespace WpfApplication1.UI
 
                     byte a = 255;
 
-                    System.Drawing.Color currentPixel = System.Drawing.Color.FromArgb((int)(a), r, g, b);
-                    pixels[y * width1 + x] = (uint)((currentPixel.A << 24) | (currentPixel.R << 16) | (currentPixel.G << 8) | (currentPixel.B << 0));
+                    pixels[x, y] = System.Drawing.Color.FromArgb((int)(a), r, g, b);
                 }
             });
 
-            bitmap.WritePixels(new Int32Rect(0, 0, width1, height1), pixels, width1 * 4, 0);
-
-            SaveImage(OutPutFile, bitmap.Clone());
-
-            ImageBitMap = bitmap;
-
-            //PopupMessage("Done.");
+            return pixels;
         }
 
-        private void SubtractImages(System.Drawing.Color[,] Image1, System.Drawing.Color[,] Image2, byte Threshold, String OutPutFile)
+        private System.Drawing.Color[,] SubtractImages(System.Drawing.Color[,] Image1, System.Drawing.Color[,] Image2, byte Threshold)
         {
 
             int width1 = Image1.GetLength(0);
@@ -1194,8 +1099,7 @@ namespace WpfApplication1.UI
             int width2 = Image2.GetLength(0);
             int height2 = Image2.GetLength(1);
 
-            uint[] pixels = new uint[Image1.Length];
-            WriteableBitmap bitmap = new WriteableBitmap(width1, height1, 96, 96, PixelFormats.Bgra32, null);
+            System.Drawing.Color[,] pixels = new System.Drawing.Color[Math.Max(width1, width2), Math.Max(height1, height2)];
 
             Parallel.For(0, Math.Min(width1, width2), x =>
             {
@@ -1221,18 +1125,10 @@ namespace WpfApplication1.UI
                     //byte a = pixel2.A;
 
 
-                    System.Drawing.Color currentPixel = System.Drawing.Color.FromArgb((int)(a), (int)(p), (int)(p), (int)(p));
-                    pixels[y * width1 + x] = (uint)((currentPixel.A << 24) | (currentPixel.R << 16) | (currentPixel.G << 8) | (currentPixel.B << 0));
+                    pixels[x, y] = System.Drawing.Color.FromArgb((int)(a), (int)(p), (int)(p), (int)(p));
                 }
             });
-
-            bitmap.WritePixels(new Int32Rect(0, 0, width1, height1), pixels, width1 * 4, 0);
-
-            SaveImage(OutPutFile, bitmap.Clone());
-
-            ImageBitMap = bitmap;
-
-            //PopupMessage("Done.");
+            return pixels;
         }
 
         private void PopupMessage(string message)
@@ -1430,5 +1326,36 @@ namespace WpfApplication1.UI
 
             return (matrix[0, 0] * matrix[1, 1] - matrix[1, 0] * matrix[0, 1]);
         } 
+
+        void SavePixelsToFile(System.Drawing.Color[,] Image, String FileName)
+        {
+            int width = Image.GetLength(0);
+            int height = Image.GetLength(1);
+
+            uint[] pixels = new uint[Image.Length];
+
+            WriteableBitmap bitmap = new WriteableBitmap(width, height, 96, 96, PixelFormats.Bgra32, null);
+
+            Parallel.For(0, width, x =>
+            {
+                for (int y = 0; y < height; y++)
+                {
+                    System.Drawing.Color currentPixel = Image[x, y];
+                    pixels[y * width + x] = (uint)((currentPixel.A << 24) | (currentPixel.R << 16) | (currentPixel.G << 8) | (currentPixel.B << 0));
+                }
+            });
+
+
+            bitmap.WritePixels(new Int32Rect(0, 0, width, height), pixels, width * 4, 0);
+
+            SaveImage(FileName, bitmap.Clone());
+
+            ImageBitMap = bitmap;
+        }
     }
+}
+
+public struct PixelValue
+{
+    public int R, G, B;
 }
