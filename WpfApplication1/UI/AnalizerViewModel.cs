@@ -26,6 +26,7 @@ namespace WpfApplication1.UI
         public AnalizerViewModel()
         {
             ImageFile = "/Images/TestImage.jpg";
+            Sigma = 6;
         }
 
         public event PropertyChangedEventHandler PropertyChanged = (sender, e) => { };
@@ -60,46 +61,80 @@ namespace WpfApplication1.UI
             }
         }
 
-        public void BlurImage_Click(object sender, RoutedEventArgs e)
+        public void SiftAlgorithm_Click(object sender, RoutedEventArgs e)
         {
-            // get sigma values for bluring
-            int sigma1 = 2;
-            //int sigma2 = 10;
 
             // get file names
-            string file1 = ProcessingFolder + string.Format("Test{0}.jpg", sigma1);
-            string grayScale = ProcessingFolder + string.Format("GraySacale{0}.jpg", sigma1);
-            string xLOG = ProcessingFolder + string.Format("xLOG{0}.jpg", sigma1);
-            string yLOG = ProcessingFolder + string.Format("yLOG{0}.jpg", sigma1);
-            string lOG = ProcessingFolder + string.Format("lOG{0}.jpg", sigma1);
-            string ssd = ProcessingFolder + string.Format("ssd{0}.jpg", sigma1);
-            string xBlur = ProcessingFolder + string.Format("xBlur{0}.jpg", sigma1);
-            string yBlur = ProcessingFolder + string.Format("yBlur{0}.jpg", sigma1);
-            string blur = ProcessingFolder + string.Format("blur{0}.jpg", sigma1);
-            //string file2 = ProcessingFolder + string.Format("Test{0}.jpg", sigma2);
-            string xDiff = ProcessingFolder + string.Format("XDiff{0}.jpg", sigma1);
-            string yDiff = ProcessingFolder + string.Format("YDiff{0}.jpg", sigma1);
-            string xxDiff = ProcessingFolder + string.Format("XXDiff{0}.jpg", sigma1);
-            string yyDiff = ProcessingFolder + string.Format("YYDiff{0}.jpg", sigma1);
-            string xyComb = ProcessingFolder + string.Format("XYComb{0}.jpg", sigma1);
-            string xxyyComb = ProcessingFolder + string.Format("XXYYComb{0}.jpg", sigma1);
-            string ZeroCross = ProcessingFolder + string.Format("ZeroCross{0}.jpg", sigma1);
-            string ZeroCrossXXYY = ProcessingFolder + string.Format("ZeroCrossXXYY{0}.jpg", sigma1);
-            string GetOboveTreshold = ProcessingFolder + string.Format("Threshold{0}.jpg", sigma1);
-            string GetMaxima = ProcessingFolder + string.Format("Maxima{0}.jpg", sigma1);
+            string file1 = ProcessingFolder + string.Format("Test{0}.jpg", Sigma);
+
+
+            PixelValue[,][,] blurLevels = new PixelValue[Sigma + 1, Levels + 1][,];
+            blurLevels[0, 0] = GetPixelValues(GetPixels(new System.Drawing.Bitmap(ImageFile)));
+
+
+            for (int i = 1; i <= Levels; i++)
+            {
+
+                blurLevels[0, i] = ShrinkImageByHalf(blurLevels[0, i-1]);
+            }
+
+            for (int i = 0; i<= Levels; i++)
+            {
+                for (int o = 1; o <= Sigma; o++)
+                {
+
+                    blurLevels[o, i] = BlurImageY(BlurImageX(blurLevels[0, i], o), o);
+                }
+            }
+
+            for (int o = 0; o < blurLevels.GetLength(0); o++)
+            {
+
+                for (int i = 0; i < blurLevels.GetLength(1); i++)
+                {
+                    SavePixelsToFile(blurLevels[o, i], ProcessingFolder + string.Format("ResolutionLevels{0}-{1}.jpg", i, o));
+                }
+            }
+
+        }
+
+        public void BlurImage_Click(object sender, RoutedEventArgs e)
+        {
+
+            // get file names
+            string file1 = ProcessingFolder + string.Format("Test{0}.jpg", Sigma);
+            string grayScale = ProcessingFolder + string.Format("GraySacale{0}.jpg", Sigma);
+            string xLOG = ProcessingFolder + string.Format("xLOG{0}.jpg", Sigma);
+            string yLOG = ProcessingFolder + string.Format("yLOG{0}.jpg", Sigma);
+            string lOG = ProcessingFolder + string.Format("lOG{0}.jpg", Sigma);
+            string ssd = ProcessingFolder + string.Format("ssd{0}.jpg", Sigma);
+            string xBlur = ProcessingFolder + string.Format("xBlur{0}.jpg", Sigma);
+            string yBlur = ProcessingFolder + string.Format("yBlur{0}.jpg", Sigma);
+            string blur = ProcessingFolder + string.Format("blur{0}.jpg", Sigma);
+            //string file2 = ProcessingFolder + string.Format("Test{0}.jpg", Sigma);
+            string xDiff = ProcessingFolder + string.Format("XDiff{0}.jpg", Sigma);
+            string yDiff = ProcessingFolder + string.Format("YDiff{0}.jpg", Sigma);
+            string xxDiff = ProcessingFolder + string.Format("XXDiff{0}.jpg", Sigma);
+            string yyDiff = ProcessingFolder + string.Format("YYDiff{0}.jpg", Sigma);
+            string xyComb = ProcessingFolder + string.Format("XYComb{0}.jpg", Sigma);
+            string xxyyComb = ProcessingFolder + string.Format("XXYYComb{0}.jpg", Sigma);
+            string ZeroCross = ProcessingFolder + string.Format("ZeroCross{0}.jpg", Sigma);
+            string ZeroCrossXXYY = ProcessingFolder + string.Format("ZeroCrossXXYY{0}.jpg", Sigma);
+            string GetOboveTreshold = ProcessingFolder + string.Format("Threshold{0}.jpg", Sigma);
+            string GetMaxima = ProcessingFolder + string.Format("Maxima{0}.jpg", Sigma);
 
             //GrayScale(GetPixels(new System.Drawing.Bitmap(ImageFile)), grayScale);
             //var pixels = GetPixels(new System.Drawing.Bitmap(ImageFile));
-            //LOGX(pixels, sigma1, xLOG);
-            //LOGY(pixels, sigma1, yLOG);
-            //LOG(GetPixels(new System.Drawing.Bitmap(ImageFile)), sigma1, true, true, lOG);
-            var sSD = SSD(GetPixels(new System.Drawing.Bitmap(ImageFile)), sigma1);
+            //LOGX(pixels, Sigma, xLOG);
+            //LOGY(pixels, Sigma, yLOG);
+            //LOG(GetPixels(new System.Drawing.Bitmap(ImageFile)), Sigma, true, true, lOG);
+            var sSD = SSD(GetPixels(new System.Drawing.Bitmap(ImageFile)), Sigma);
             //SavePixelsToFile(sSD, ssd);
             var localMax = FindLocalMaxima(sSD, 0);
 
             SavePixelsToFile(localMax, GetMaxima);
-            //BlurImageX(GetPixels(new System.Drawing.Bitmap(grayScale)), sigma1, xBlur);
-            //BlurImageY(GetPixels(new System.Drawing.Bitmap(xBlur)), sigma1, blur);
+            //BlurImageX(GetPixels(new System.Drawing.Bitmap(grayScale)), Sigma, xBlur);
+            //BlurImageY(GetPixels(new System.Drawing.Bitmap(xBlur)), Sigma, blur);
             //BlurImage(GetPixels(new System.Drawing.Bitmap(ImageFile)), sigma2, file2);
             //SubtractImages(GetPixels(new System.Drawing.Bitmap(file1)), GetPixels(new System.Drawing.Bitmap(file2)), 5, ProcessingFolder + "Edges.jpg");
             //GetXDifferencial(GetPixels(new System.Drawing.Bitmap(blur)), xDiff);
@@ -114,8 +149,8 @@ namespace WpfApplication1.UI
 
             //for (int i = 0; i< 7; i++)
             //{
-            //    string GetOboveTreshold = ProcessingFolder + string.Format("Threshold{0}-{1}.jpg", sigma1, i);
-            //    string GetOboveTreshold2nd = ProcessingFolder + string.Format("Threshold2nd{0}-{1}.jpg", sigma1, i);
+            //    string GetOboveTreshold = ProcessingFolder + string.Format("Threshold{0}-{1}.jpg", Sigma, i);
+            //    string GetOboveTreshold2nd = ProcessingFolder + string.Format("Threshold2nd{0}-{1}.jpg", Sigma, i);
             //    //FindGreatestGradiant(GetPixels(new System.Drawing.Bitmap(xxyyComb)), GetOboveTreshold2nd, i);
             //    FindGreatestGradiant(GetPixels(new System.Drawing.Bitmap(lOG)), GetOboveTreshold, i);
             //}
@@ -173,23 +208,23 @@ namespace WpfApplication1.UI
             return matrix;
         }
 
-        private void BlurImageX(System.Drawing.Color[,] Image, int Sigma)
+        private PixelValue[,] BlurImageX(PixelValue[,] Image, int Sigma)
         {
-            BlurImage(Image, Sigma, true, false);
+            return BlurImage(Image, Sigma, true, false);
         }
 
-        private void BlurImageY(System.Drawing.Color[,] Image, int Sigma)
+        private PixelValue[,] BlurImageY(PixelValue[,] Image, int Sigma)
         {
-            BlurImage(Image, Sigma, false, true);
+            return BlurImage(Image, Sigma, false, true);
         }
 
-        private System.Drawing.Color[,] BlurImage(System.Drawing.Color[,] Image, int Sigma, bool DoX, bool DoY)
+        private PixelValue[,] BlurImage(PixelValue[,] Image, int Sigma, bool DoX, bool DoY)
         {
 
             int width = Image.GetLength(0);
             int height = Image.GetLength(1);
 
-            System.Drawing.Color[,] pixels = new System.Drawing.Color[width, height];
+            PixelValue[,] pixels = new PixelValue[width, height];
 
             int xDist = Sigma * 3;
             //if (Sigma % 2 != 0) xDist += 1;
@@ -244,29 +279,32 @@ namespace WpfApplication1.UI
 
                     for (int i = -xDist; i <= xDist; i++)
                     {
-                        if (x + i >= 0 && x + i < width)
+                        int currentX = Math.Min(Math.Max(x + i, 0), width - 1);
+
+                        for (int j = -yDist; j <= yDist; j++)
                         {
-                            for (int j = -yDist; j <= yDist; j++)
-                            {
-                                if (y + j >= 0 && y + j < height)
-                                {
-                                    System.Drawing.Color pixel = Image[x + i, y + j];
+                            int currentY = Math.Min(Math.Max(y + j, 0), height - 1);
 
-                                    double gauss = filter[i + xDist, j + yDist];
+                            PixelValue pixel = Image[currentX, currentY];
 
-                                    r += pixel.R * gauss;
-                                    //g += pixel.G * gauss;
-                                    //b += pixel.B * gauss;
-                                    //a += pixel.A * gauss;
-                                }
-                            }
+                            double gauss = filter[i + xDist, j + yDist];
+
+                            r += pixel.R * gauss;
+                            g += pixel.G * gauss;
+                            b += pixel.B * gauss;
+                            //a += pixel.A * gauss;
                         }
                     }
 
                     if (pixelCount > 0)
                     {
-                        int p = Math.Min((int)(r * inverse), 255);
-                        pixels[x, y] = System.Drawing.Color.FromArgb(255, p, p, p);
+                        int R = Math.Min((int)(r * inverse), 255);
+                        int G = Math.Min((int)(g * inverse), 255);
+                        int B = Math.Min((int)(b * inverse), 255);
+                        pixels[x, y] = new PixelValue();
+                        pixels[x, y].R = R;
+                        pixels[x, y].G = G;
+                        pixels[x, y].B = B;
                     }
                     else
                     {
@@ -280,24 +318,82 @@ namespace WpfApplication1.UI
         }
 
 
-        private void LOGX(System.Drawing.Color[,] Image, int Sigma)
+        private PixelValue[,] ShrinkImageByOne(PixelValue[,] Image)
         {
-            LOG(Image, Sigma, true, false);
+
+            int width = Image.GetLength(0) - 1;
+            int height = Image.GetLength(1) - 1;
+
+            double quarter = 1.0 / 4.0;
+
+            PixelValue[,] pixels = new PixelValue[width, height];
+
+            Parallel.For(0, width, x =>
+            {
+                for (int y = 0; y < height; y++)
+                {
+                    PixelValue p00 = Image[x, y];
+                    PixelValue p01 = Image[x, y + 1];
+                    PixelValue p10 = Image[x + 1, y];
+                    PixelValue p11 = Image[x + 1, y + 1];
+
+                    pixels[x, y] = new PixelValue();
+                    pixels[x, y].R = (int)((double)(p00.R + p01.R + p10.R + p11.R) * quarter);
+                    pixels[x, y].G = (int)((double)(p00.G + p01.G + p10.G + p11.G) * quarter);
+                    pixels[x, y].B = (int)((double)(p00.B + p01.B + p10.B + p11.B) * quarter);
+                }
+            });
+
+            return pixels;
         }
 
-        private void LOGY(System.Drawing.Color[,] Image, int Sigma)
+        private PixelValue[,] ShrinkImageByHalf(PixelValue[,] Image)
         {
-            LOG(Image, Sigma, false, true);
+
+            int width = Image.GetLength(0)/2;
+            int height = Image.GetLength(1)/2;
+
+            double quarter = 1.0 / 4.0;
+
+            PixelValue[,] pixels = new PixelValue[width, height];
+
+            Parallel.For(0, width, x =>
+            {
+                for (int y = 0; y < height; y++)
+                {
+                    PixelValue p00 = Image[x * 2, y * 2];
+                    PixelValue p01 = Image[x * 2, y * 2 + 1];
+                    PixelValue p10 = Image[x * 2 + 1, y * 2];
+                    PixelValue p11 = Image[x * 2 + 1, y * 2 + 1];
+
+                    pixels[x, y] = new PixelValue();
+                    pixels[x, y].R = (int)((double)(p00.R + p01.R + p10.R + p11.R) * quarter);
+                    pixels[x, y].G = (int)((double)(p00.G + p01.G + p10.G + p11.G) * quarter);
+                    pixels[x, y].B = (int)((double)(p00.B + p01.B + p10.B + p11.B) * quarter);
+                }
+            });
+
+            return pixels;
+        }
+
+        private PixelValue[,] LOGX(PixelValue[,] Image, int Sigma)
+        {
+            return LOG(Image, Sigma, true, false);
+        }
+
+        private PixelValue[,] LOGY(PixelValue[,] Image, int Sigma)
+        {
+            return LOG(Image, Sigma, false, true);
         }
 
 
-        private System.Drawing.Color[,] LOG(System.Drawing.Color[,] Image, int Sigma, bool DoX, bool DoY)
+        private PixelValue[,] LOG(PixelValue[,] Image, int Sigma, bool DoX, bool DoY)
         {
 
             int width = Image.GetLength(0);
             int height = Image.GetLength(1);
 
-            System.Drawing.Color[,] pixels = new System.Drawing.Color[width, height];
+            PixelValue[,] pixels = new PixelValue[width, height];
 
             int xDist = Sigma * 3;
             //if (Sigma % 2 != 0) xDist += 1;
@@ -365,7 +461,7 @@ namespace WpfApplication1.UI
                             {
                                 if (y + j >= 0 && y + j < height)
                                 {
-                                    System.Drawing.Color pixel = Image[x + i, y + j];
+                                    PixelValue pixel = Image[x + i, y + j];
 
                                     double log = filter[i + xDist, j + yDist];
 
@@ -383,7 +479,10 @@ namespace WpfApplication1.UI
                         int r2 = Math.Min((int)(r), 255);
                         int g2 = Math.Min((int)(g), 255);
                         int b2 = Math.Min((int)(b), 255);
-                        pixels[x, y] = System.Drawing.Color.FromArgb(255, r2, g2, b2);
+                        pixels[x, y] = new PixelValue();
+                        pixels[x, y].R = r2;
+                        pixels[x, y].G = g2;
+                        pixels[x, y].B = b2;
                     }
                     else
                     {
@@ -561,12 +660,12 @@ namespace WpfApplication1.UI
             return pixels;
         }
 
-        private System.Drawing.Color[,] GetDifferencial(System.Drawing.Color[,] Image)
+        private PixelValue[,] GetDifferencial(PixelValue[,] Image)
         {
             int width = Image.GetLength(0);
             int height = Image.GetLength(1);
 
-            System.Drawing.Color[,] pixels = new System.Drawing.Color[width, height];
+            PixelValue[,] pixels = new PixelValue[width, height];
 
             Parallel.For(0, width, x =>
             {
@@ -577,22 +676,25 @@ namespace WpfApplication1.UI
                     int b = HALF;
                     int a = 255;
 
-                    System.Drawing.Color pixel1 = Image[x, y];
+                    PixelValue pixel1 = Image[x, y];
 
                     if (y + 1 < height)
                     {
-                        System.Drawing.Color pixel2 = Image[x, y + 1];
+                        PixelValue pixel2 = Image[x, y + 1];
 
                         g = Math.Max(Math.Min(HALF + (pixel2.R - pixel1.R), 255), 0);
                     }
 
                     if (x + 1 < width)
                     {
-                        System.Drawing.Color pixel3 = Image[x + 1, y];
+                        PixelValue pixel3 = Image[x + 1, y];
 
                         r = Math.Max(Math.Min(HALF + (pixel3.R - pixel1.R), 255), 0);
                     }
-                    pixels[x, y] = System.Drawing.Color.FromArgb(a, r, g, b);
+                    pixels[x, y] = new PixelValue();
+                    pixels[x, y].R = r;
+                    pixels[x, y].G = g;
+                    pixels[x, y].B = b;
                 }
             });
 
@@ -832,15 +934,21 @@ namespace WpfApplication1.UI
             return pixels;
         }
 
-        private System.Drawing.Color[,] FindGreatestGradiant(System.Drawing.Color[,] Image, int Threshold = 1)
+        private PixelValue[,] FindGreatestGradiant(PixelValue[,] Image, int Threshold = 1)
         {
             int width = Image.GetLength(0);
             int height = Image.GetLength(1);
 
-            System.Drawing.Color[,] pixels = new System.Drawing.Color[width, height];
+            PixelValue[,] pixels = new PixelValue[width, height];
 
-            System.Drawing.Color halfPix = System.Drawing.Color.FromArgb(255, HALF, HALF, HALF);
-            System.Drawing.Color orig = System.Drawing.Color.FromArgb(255, 0, 0, 0);
+            PixelValue halfPix = new PixelValue();
+            halfPix.R = HALF;
+            halfPix.G = HALF;
+            halfPix.B = HALF;
+            PixelValue orig = new PixelValue();
+            halfPix.R = 0;
+            halfPix.G = 0;
+            halfPix.B = 0; 
 
             Parallel.For(0, width, x =>
             {
@@ -849,7 +957,7 @@ namespace WpfApplication1.UI
                 int p = 0;
                 int a = 255;
 
-                System.Drawing.Color Pixel = Image[x, y];
+                    PixelValue Pixel = Image[x, y];
 
                     if (GetPixel2DDist(Pixel, halfPix) >= Threshold)
                     {
@@ -857,7 +965,7 @@ namespace WpfApplication1.UI
 
                         if (y - 1 >= 0)
                         {
-                            System.Drawing.Color pixel2 = Image[x, y - 1];
+                            PixelValue pixel2 = Image[x, y - 1];
 
                             if (Pixel.G >= HALF)
                             {
@@ -875,7 +983,7 @@ namespace WpfApplication1.UI
                         }
                         if (y + 1 < height)
                         {
-                            System.Drawing.Color pixel2 = Image[x, y + 1];
+                            PixelValue pixel2 = Image[x, y + 1];
 
                             if (Pixel.G >= HALF)
                             {
@@ -903,7 +1011,7 @@ namespace WpfApplication1.UI
                         {
                             if (x - 1 >= 0)
                             {
-                                System.Drawing.Color pixel2 = Image[x - 1, y];
+                                PixelValue pixel2 = Image[x - 1, y];
 
                                 if (Pixel.R >= HALF)
                                 {
@@ -923,7 +1031,7 @@ namespace WpfApplication1.UI
                             }
                             if (x + 1 < width)
                             {
-                                System.Drawing.Color pixel2 = Image[x + 1, y];
+                                PixelValue pixel2 = Image[x + 1, y];
 
                                 if (Pixel.R >= HALF)
                                 {
@@ -952,18 +1060,21 @@ namespace WpfApplication1.UI
                         if (isExtrema) p = 255;
                     }
 
-                    pixels[x, y] = System.Drawing.Color.FromArgb(a, p, p, p);
+                    pixels[x, y] = new PixelValue();
+                    pixels[x, y].R = p;
+                    pixels[x, y].G = p;
+                    pixels[x, y].B = p;
                 }
             });
             return pixels;
         }
 
-        private System.Drawing.Color[,] FindLocalMaxima(PixelValue[,] Image, int Threshold = 1)
+        private PixelValue[,] FindLocalMaxima(PixelValue[,] Image, int Threshold = 1)
         {
             int width = Image.GetLength(0);
             int height = Image.GetLength(1);
 
-            System.Drawing.Color[,] pixels = new System.Drawing.Color[width, height];
+            PixelValue[,] pixels = new PixelValue[width, height];
 
             Parallel.For(0, width, x =>
             {
@@ -1005,7 +1116,10 @@ namespace WpfApplication1.UI
 
                     }
 
-                    pixels[x, y] = System.Drawing.Color.FromArgb(a, p, p, p);
+                    pixels[x, y] = new PixelValue();
+                    pixels[x, y].R = p;
+                    pixels[x, y].G = p;
+                    pixels[x, y].B = p;
                 }
             });
             return pixels;
@@ -1155,6 +1269,24 @@ namespace WpfApplication1.UI
             return pixels;
         }
 
+        private PixelValue[,] GetPixelValues(System.Drawing.Color[,] Image)
+        {
+            PixelValue[,] pixels = new PixelValue[Image.GetLength(0), Image.GetLength(1)];
+
+            for (int x = 0; x < Image.GetLength(0); x++)
+            {
+                for (int y = 0; y < Image.GetLength(1); y++)
+                {
+                    pixels[x, y] = new PixelValue();
+                    pixels[x, y].R = Image[x, y].R;
+                    pixels[x, y].G = Image[x, y].G;
+                    pixels[x, y].B = Image[x, y].B;
+                }
+            }
+
+            return pixels;
+        }
+
         private String _ImageFile = "";
 
         public String ImageFile
@@ -1212,7 +1344,36 @@ namespace WpfApplication1.UI
             }
         }
 
+        private int _Sigma;
+        public int Sigma
+        {
+            get
+            {
+                return _Sigma;
+            }
+            set
+            {
+                _Sigma = value;
+                this.PropertyChanged(this, new PropertyChangedEventArgs(nameof(Sigma)));
+            }
+        }
+
+        private int _Levels;
+        public int Levels
+        {
+            get
+            {
+                return _Levels;
+            }
+            set
+            {
+                _Levels = value;
+                this.PropertyChanged(this, new PropertyChangedEventArgs(nameof(Levels)));
+            }
+        }
+
         private String _ProcessingFolder = "D:/ProcessFolder/";
+
         public String ProcessingFolder
         {
             get
@@ -1231,11 +1392,13 @@ namespace WpfApplication1.UI
         {
             if (filename != string.Empty)
             {
-                using (FileStream stream5 = new FileStream(filename, FileMode.Create))
+                using (FileStream stream = new FileStream(filename, FileMode.Create))
                 {
-                    PngBitmapEncoder encoder5 = new PngBitmapEncoder();
-                    encoder5.Frames.Add(BitmapFrame.Create(image));
-                    encoder5.Save(stream5);
+                    PngBitmapEncoder encoder = new PngBitmapEncoder();
+                    encoder.Frames.Add(BitmapFrame.Create(image));
+                    encoder.Save(stream);
+
+                    stream.Close();
                 }
             }
         }
@@ -1309,7 +1472,7 @@ namespace WpfApplication1.UI
             return sign * (int)Math.Sqrt(r * r + g * g + b * b);
         }
 
-        int GetPixel2DDist(System.Drawing.Color p1, System.Drawing.Color p2)
+        int GetPixel2DDist(PixelValue p1, PixelValue p2)
         {
             int r = (int)p1.R - (int)p2.R;
             int g = (int)p1.G - (int)p2.G;
@@ -1327,7 +1490,7 @@ namespace WpfApplication1.UI
             return (matrix[0, 0] * matrix[1, 1] - matrix[1, 0] * matrix[0, 1]);
         } 
 
-        void SavePixelsToFile(System.Drawing.Color[,] Image, String FileName)
+        void SavePixelsToFile(PixelValue[,] Image, String FileName)
         {
             int width = Image.GetLength(0);
             int height = Image.GetLength(1);
@@ -1340,15 +1503,15 @@ namespace WpfApplication1.UI
             {
                 for (int y = 0; y < height; y++)
                 {
-                    System.Drawing.Color currentPixel = Image[x, y];
-                    pixels[y * width + x] = (uint)((currentPixel.A << 24) | (currentPixel.R << 16) | (currentPixel.G << 8) | (currentPixel.B << 0));
+                    PixelValue currentPixel = Image[x, y];
+                    pixels[y * width + x] = (uint)((255 << 24) | (currentPixel.R << 16) | (currentPixel.G << 8) | (currentPixel.B << 0));
                 }
             });
 
 
             bitmap.WritePixels(new Int32Rect(0, 0, width, height), pixels, width * 4, 0);
 
-            SaveImage(FileName, bitmap.Clone());
+            SaveImage(FileName, bitmap);
 
             ImageBitMap = bitmap;
         }

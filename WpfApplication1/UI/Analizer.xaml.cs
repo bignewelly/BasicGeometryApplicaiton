@@ -31,11 +31,20 @@ namespace BasicGeometryApp
         private void GetImage_Click(object sender, RoutedEventArgs e)
         {
             ((AnalizerViewModel)this.DataContext).GetImage_Click(sender, e);
+            blurButton.IsEnabled = true;
+            siftButton.IsEnabled = true;
+            omega.IsEnabled = true;
+            levels.IsEnabled = true;
         }
 
         private void BlurImage_Click(object sender, RoutedEventArgs e)
         {
             ((AnalizerViewModel)this.DataContext).BlurImage_Click(sender, e);
+        }
+
+        private void SiftAlgorithm_Click(object sender, RoutedEventArgs e)
+        {
+            ((AnalizerViewModel)this.DataContext).SiftAlgorithm_Click(sender, e);
         }
     }
 }

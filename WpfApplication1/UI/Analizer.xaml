@@ -22,18 +22,37 @@
             <Grid.RowDefinitions >
                 <RowDefinition Height="auto" />
                 <RowDefinition Height="auto" />
+                <RowDefinition Height="auto" />
             </Grid.RowDefinitions>
             <Grid Grid.Row="0">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="auto" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <Label Grid.Column="1">Analizer</Label>
+            </Grid>
+            <Grid Grid.Row="1">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="auto" />
+                    <ColumnDefinition Width="auto" />
+                    <ColumnDefinition Width="auto" />
+                    <ColumnDefinition Width="auto" />
+                    <ColumnDefinition Width="auto" />
+                    <ColumnDefinition Width="auto" />
                     <ColumnDefinition Width="auto" />
                     <ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>
-                <Button Grid.Column="1" Click="GetImage_Click" Height="auto" Width="auto" Content="Get Image" Padding="3" />
-                <Button Grid.Column="2" Click="BlurImage_Click" Height="auto" Width="auto" Content="Blur Image" Padding="3" />
+                <Button Name="getImageButton" Grid.Column="1" Click="GetImage_Click" Height="auto" Width="auto" Content="Get Image" Padding="3" />
+                <Button Name="blurButton" Grid.Column="2" Click="BlurImage_Click" Height="auto" Width="auto" Content="Blur Image" Padding="3" IsEnabled="False" />
+                <Button Name="siftButton" Grid.Column="3" Click="SiftAlgorithm_Click" Height="auto" Width="auto" Content="Sift Algorithm" Padding="3" IsEnabled="False" />
+                <Label Name="lblOmega" Grid.Column="4">Omega:</Label>
+                <TextBox Name="omega" Text="{Binding Sigma}"  Grid.Column="5" IsEnabled="False" />
+                <Label Name="lblLevels" Grid.Column="6">Levels:</Label>
+                <TextBox Name="levels" Text="{Binding Levels}"  Grid.Column="7" IsEnabled="False" />
             </Grid>
-            <Image Grid.Row="1" Source="{Binding Path=ImageBitMap}" >
+            <Image Grid.Row="2" Source="{Binding Path=ImageBitMap}" >
                 <Image.RenderTransform>
                     <MatrixTransform Matrix="{Binding TransformMatrix}" />
                 </Image.RenderTransform>
