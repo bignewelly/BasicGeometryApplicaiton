@@ -34,7 +34,9 @@ namespace BasicGeometryApp
             blurButton.IsEnabled = true;
             siftButton.IsEnabled = true;
             omega.IsEnabled = true;
-            levels.IsEnabled = true;
+            octaves.IsEnabled = true;
+            scales.IsEnabled = true;
+            k.IsEnabled = true;
         }
 
         private void BlurImage_Click(object sender, RoutedEventArgs e)
