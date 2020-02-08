@@ -61,7 +61,6 @@ namespace WpfApplication1.UI
             // get file names
             string file1 = ProcessingFolder + string.Format("Test{0}.jpg", Sigma);
 
-
             PixelValue[,][,] blurLevels = new PixelValue[Scales + 1, Octaves + 1][,];
             blurLevels[0, 0] = GetPixelValues(GetPixels(new System.Drawing.Bitmap(ImageFile)));
 
@@ -72,51 +71,68 @@ namespace WpfApplication1.UI
             for (int i = 1; i <= Octaves; i++)
             {
 
-                blurLevels[0, i] = ShrinkImageByHalf(blurLevels[0, i-1]);
-            }
+                blurLevels[0, i] = ShrinkImageByHalf(blurLevels[0, i - 1]);
+            };
 
-            for (int i = 0; i<= Octaves; i++)
-            {
-                double sig = Sigma;
-                for (int j = 1; j <= Scales; j++)
-                {
-                    if (Sigma > 1)
-                    {
-                        sig *= K;
-                    }
+            Parallel.For(0, Octaves + 1, i =>
+           {
+               double sig = Sigma;
+               for (int j = 1; j <= Scales; j++)
+               {
+                   if (Sigma > 1)
+                   {
+                       sig *= K;
+                   }
 
-                    blurLevels[j, i] = BlurImageY(BlurImageX(blurLevels[0, i], sig), sig);
-                }
-            }
+                   blurLevels[j, i] = BlurImageY(BlurImageX(blurLevels[0, i], sig), sig);
+               }
+           });
 
             PixelValue[,][,] diffLevels = new PixelValue[Scales, Octaves + 1][,];
 
+            Parallel.For(0, diffLevels.GetLength(0), i =>
+           {
+               for (int j = 0; j < diffLevels.GetLength(1); j++)
+               {
+                   diffLevels[i, j] = SubtractImages(blurLevels[i, j], blurLevels[i + 1, j], 0);
+               }
+           });
 
-            for (int i = 0; i < diffLevels.GetLength(0); i++)
-            {
-                for (int j = 0; j < diffLevels.GetLength(1); j++)
-                {
-                    diffLevels[i, j] = SubtractImages(blurLevels[i, j], blurLevels[i + 1, j], 0);
-                }
-            }
+            // Find the keypoints
+            // Loop through each octave and check for the extrema 
+            Parallel.For(0, blurLevels.GetLength(0), i =>
+           {
+               for (int j = 0; j < blurLevels.GetLength(1); j++)
+               {
+                   // Loop through each of the pixels and check there values
 
-            for (int o = 0; o < blurLevels.GetLength(0); o++)
-            {
+                   for (int x = 0; x < blurLevels[i, j].GetLength(0); x++)
+                   {
+                       for (int y = 0; y < blurLevels[i, j].GetLength(1); y++)
+                       {
 
-                for (int i = 0; i < blurLevels.GetLength(1); i++)
-                {
-                    SavePixelsToFile(blurLevels[o, i], ProcessingFolder + string.Format("ResolutionLevels{0}-{1}.jpg", i, o));
-                }
-            }
+                       }
+                   }
+               }
+           });
 
-            for (int o = 0; o < diffLevels.GetLength(0); o++)
-            {
+           for (int o = 0; o < blurLevels.GetLength(0); o++)
+           {
 
-                for (int i = 0; i < diffLevels.GetLength(1); i++)
-                {
-                    SavePixelsToFile(AddToGray(diffLevels[o, i]), ProcessingFolder + string.Format("DiffLevels{0}-{1}.jpg", i, o));
-                }
-            }
+               for (int i = 0; i < blurLevels.GetLength(1); i++)
+               {
+                   SavePixelsToFile(blurLevels[o, i], ProcessingFolder + string.Format("ResolutionLevels{0}-{1}.jpg", i, o));
+               }
+           };
+
+            for(int o = 0; o < diffLevels.GetLength(0); o++)
+           {
+
+               for (int i = 0; i < diffLevels.GetLength(1); i++)
+               {
+                   SavePixelsToFile(AddToGray(diffLevels[o, i]), ProcessingFolder + string.Format("DiffLevels{0}-{1}.jpg", i, o));
+               }
+           };
         }
 
         public void BlurImage_Click(object sender, RoutedEventArgs e)
@@ -247,7 +263,7 @@ namespace WpfApplication1.UI
 
             PixelValue[,] pixels = new PixelValue[width, height];
 
-            int xDist = (int) Sigma * 3;
+            int xDist = (int)Sigma * 3;
             //if (Sigma % 2 != 0) xDist += 1;
             int yDist = xDist;
 
@@ -366,8 +382,8 @@ namespace WpfApplication1.UI
         private PixelValue[,] ShrinkImageByHalf(PixelValue[,] Image)
         {
 
-            int width = Image.GetLength(0)/2;
-            int height = Image.GetLength(1)/2;
+            int width = Image.GetLength(0) / 2;
+            int height = Image.GetLength(1) / 2;
 
             double quarter = 1.0 / 4.0;
 
@@ -443,7 +459,8 @@ namespace WpfApplication1.UI
             if (DoX && DoY)
             {
                 inverse = 1.0;
-            } else
+            }
+            else
             {
                 inverse = 3.0 / Math.Sqrt(Sigma);
             }
@@ -519,7 +536,7 @@ namespace WpfApplication1.UI
 
             PixelValue[,] pixels = new PixelValue[width, height];
 
-            int xDist = (int) Sigma * 3;
+            int xDist = (int)Sigma * 3;
             //if (Sigma % 2 != 0) xDist += 1;
             int yDist = xDist;
 
@@ -577,7 +594,7 @@ namespace WpfApplication1.UI
                         val.R = r2;
                         val.G = g2;
                         val.B = b2;
-                        pixels[x,y] = val;
+                        pixels[x, y] = val;
                     }
                     else
                     {
@@ -609,7 +626,7 @@ namespace WpfApplication1.UI
                 {
                     System.Drawing.Color pixel = Image[x, y];
 
-                    int p = (int) ((double)GetPixelDist(pixel, OriginPixel) * pixelInverse);
+                    int p = (int)((double)GetPixelDist(pixel, OriginPixel) * pixelInverse);
 
                     pixels[x, y] = System.Drawing.Color.FromArgb(255, p, p, p);
                 }
@@ -759,7 +776,8 @@ namespace WpfApplication1.UI
                         if (xdir < 0 && x - 1 >= 0)
                         {
                             x2 = x - 1;
-                        } else if (xdir > 0 && x + 1 < width)
+                        }
+                        else if (xdir > 0 && x + 1 < width)
                         {
                             x2 = x + 1;
                         }
@@ -793,13 +811,15 @@ namespace WpfApplication1.UI
 
                     double xPercent = (double)totalDir / (double)xdir;
 
-                    if (xPercent > 2* oneThird)
+                    if (xPercent > 2 * oneThird)
                     {
                         Pixel2 = Image[x2, y];
-                    } else if(xPercent < oneThird)
+                    }
+                    else if (xPercent < oneThird)
                     {
                         Pixel2 = Image[x, y2];
-                    } else
+                    }
+                    else
                     {
                         Pixel2 = Image[x2, y2];
                     }
@@ -964,14 +984,14 @@ namespace WpfApplication1.UI
             PixelValue orig = new PixelValue();
             halfPix.R = 0;
             halfPix.G = 0;
-            halfPix.B = 0; 
+            halfPix.B = 0;
 
             Parallel.For(0, width, x =>
             {
-            for (int y = 0; y < height; y++)
-            {
-                short p = 0;
-                short a = 255;
+                for (int y = 0; y < height; y++)
+                {
+                    short p = 0;
+                    short a = 255;
 
                     PixelValue Pixel = Image[x, y];
 
@@ -989,7 +1009,8 @@ namespace WpfApplication1.UI
                                 {
                                     isExtrema = true;
                                 }
-                            } else
+                            }
+                            else
                             {
                                 if (pixel2.G > Pixel.G)
                                 {
@@ -1006,7 +1027,8 @@ namespace WpfApplication1.UI
                                 if (pixel2.G < Pixel.G)
                                 {
                                     isExtrema = true;
-                                } else
+                                }
+                                else
                                 {
                                     isExtrema = false;
                                 }
@@ -1016,7 +1038,8 @@ namespace WpfApplication1.UI
                                 if (pixel2.G > Pixel.G)
                                 {
                                     isExtrema = true;
-                                } else
+                                }
+                                else
                                 {
                                     isExtrema = false;
                                 }
@@ -1054,7 +1077,8 @@ namespace WpfApplication1.UI
                                     if (pixel2.R < Pixel.R)
                                     {
                                         isExtrema = true;
-                                    } else
+                                    }
+                                    else
                                     {
                                         isExtrema = false;
                                     }
@@ -1064,7 +1088,8 @@ namespace WpfApplication1.UI
                                     if (pixel2.R > Pixel.R)
                                     {
                                         isExtrema = true;
-                                    } else
+                                    }
+                                    else
                                     {
                                         isExtrema = false;
                                     }
@@ -1101,7 +1126,7 @@ namespace WpfApplication1.UI
 
                     PixelValue Pixel = Image[x, y];
 
-                    if (Pixel.R >= Threshold || Pixel.G >= Threshold || Pixel.B >= Threshold )
+                    if (Pixel.R >= Threshold || Pixel.G >= Threshold || Pixel.B >= Threshold)
                     {
 
                         if (y - 1 >= 0 && y + 1 < height && x - 1 >= 0 && x + 1 < width)
@@ -1118,7 +1143,8 @@ namespace WpfApplication1.UI
                                         if ((Pixel.R != pixel2.R && Pixel.G != pixel2.G && Pixel.B != pixel2.B) && (Pixel.R >= pixel2.R && Pixel.G >= pixel2.G && Pixel.B >= pixel2.B))
                                         {
                                             isExtrema = true;
-                                        } else
+                                        }
+                                        else
                                         {
                                             isExtrema = false;
                                         }
@@ -1192,7 +1218,7 @@ namespace WpfApplication1.UI
                     System.Drawing.Color pixel2 = Image2[x, y];
 
                     // averaget two pixels together
-                    int r = ((int)pixel1.R + (int)pixel2.R)/ 2;
+                    int r = ((int)pixel1.R + (int)pixel2.R) / 2;
                     int g = ((int)pixel1.G + (int)pixel2.G) / 2;
                     int b = ((int)pixel1.B + (int)pixel2.B) / 2;
 
@@ -1278,7 +1304,7 @@ namespace WpfApplication1.UI
 
             Parallel.For(0, width, x =>
             {
-                for (int y = 0; y < height ; y++)
+                for (int y = 0; y < height; y++)
                 {
                     PixelValue pixel1 = Image[x, y];
 
@@ -1478,6 +1504,7 @@ namespace WpfApplication1.UI
                     encoder.Save(stream);
 
                     stream.Close();
+                    encoder = null;
                 }
             }
         }
@@ -1487,7 +1514,8 @@ namespace WpfApplication1.UI
             if (Value >= Threshold)
             {
                 return 255;
-            } else
+            }
+            else
             {
                 return 0;
             }
@@ -1495,7 +1523,7 @@ namespace WpfApplication1.UI
 
         double[,] GetGaussianFilter(int XDist, int YDist, double o)
         {
-            double[,] filter = new double[XDist*2 + 1,YDist*2 + 1];
+            double[,] filter = new double[XDist * 2 + 1, YDist * 2 + 1];
             double inv = 0.5 / (o * o);
             Parallel.For(-XDist, XDist + 1, x =>
             {
@@ -1567,7 +1595,7 @@ namespace WpfApplication1.UI
             }
 
             return (matrix[0, 0] * matrix[1, 1] - matrix[1, 0] * matrix[0, 1]);
-        } 
+        }
 
         void SavePixelsToFile(PixelValue[,] Image, String FileName)
         {
@@ -1575,8 +1603,6 @@ namespace WpfApplication1.UI
             int height = Image.GetLength(1);
 
             uint[] pixels = new uint[Image.Length];
-
-            WriteableBitmap bitmap = new WriteableBitmap(width, height, 96, 96, PixelFormats.Bgra32, null);
 
             Parallel.For(0, width, x =>
             {
@@ -1588,11 +1614,16 @@ namespace WpfApplication1.UI
             });
 
 
+            WriteableBitmap bitmap = new WriteableBitmap(width, height, 96, 96, PixelFormats.Bgra32, null);
+
             bitmap.WritePixels(new Int32Rect(0, 0, width, height), pixels, width * 4, 0);
 
             SaveImage(FileName, bitmap);
-
+            
             ImageBitMap = bitmap;
+
+            pixels = null;
+            bitmap = null;
         }
     }
 }
@@ -1600,4 +1631,11 @@ namespace WpfApplication1.UI
 public struct PixelValue
 {
     public short R, G, B;
+}
+
+public struct Keypoint
+{
+    int X, Y;
+    int SigmaScale;
+    int Octave;
 }
