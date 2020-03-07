@@ -23,6 +23,7 @@
                 <RowDefinition Height="auto" />
                 <RowDefinition Height="auto" />
                 <RowDefinition Height="auto" />
+                <RowDefinition Height="auto" />
             </Grid.RowDefinitions>
             <Grid Grid.Row="0">
                 <Grid.ColumnDefinitions>
@@ -60,7 +61,8 @@
                 <Label Name="lblK" Grid.Column="10">K:</Label>
                 <TextBox Name="k" Text="{Binding K}"  Grid.Column="11" IsEnabled="False" />
             </Grid>
-            <Image Grid.Row="2" Source="{Binding Path=ImageBitMap}" >
+            <TextBlock Grid.Row="2" Text="{Binding ErrorMsg }" />
+            <Image Grid.Row="3" Source="{Binding Path=ImageBitMap}" >
                 <Image.RenderTransform>
                     <MatrixTransform Matrix="{Binding TransformMatrix}" />
                 </Image.RenderTransform>
