@@ -59,9 +59,6 @@ namespace WpfApplication1.UI
         {
             try
             {
-                // get file names
-                string file1 = ProcessingFolder + string.Format("Test{0}.jpg", Sigma);
-
                 double sg = pow(Sigma, Scales);
 
                 PixelValue[,][,] blurLevels = new PixelValue[Octaves + 1, Scales + 1][,];
@@ -107,17 +104,17 @@ namespace WpfApplication1.UI
 
                 // Find the keypoints
                 // Loop through each octave and check for the extrema 
-                Parallel.For(0, diffLevels.GetLength(0), i =>
+                Parallel.For(1, diffLevels.GetLength(0) - 1, i =>
                 {
                     if (keyPoints[i] == null) keyPoints[i] = new List<Keypoint>();
-                    for (int j = 0; j < diffLevels.GetLength(1); j++)
+                    for (int j = 1; j < diffLevels.GetLength(1) - 1; j++)
                     {
 
                         // Loop through each of the pixels and check their values
 
-                        for (int x = 0; x < diffLevels[i, j].GetLength(0); x++)
+                        for (int x = 1; x < diffLevels[i, j].GetLength(0) - 1; x++)
                         {
-                            for (int y = 0; y < diffLevels[i, j].GetLength(1); y++)
+                            for (int y = 1; y < diffLevels[i, j].GetLength(1) - 1; y++)
                             {
                                 PixelValue currentPixel = diffLevels[i, j][x, y];
                                 bool[] hasMaxima = { true, true, true };
@@ -137,73 +134,66 @@ namespace WpfApplication1.UI
                                             int tempY = y + w;
 
                                             // If we we are out of bounds at the current octave, shift an octave
-                                            if (tempSigma < 0)
-                                            {
-                                                tempOctave -= 1;
-                                                tempSigma = diffLevels.GetLength(1) - 1;
-                                                tempX = tempX * 2;
-                                                tempY = tempY * 2;
+                                            //if (tempSigma < 0)
+                                            //{
+                                            //    tempOctave -= 1;
+                                            //    tempSigma = diffLevels.GetLength(1) - 1;
+                                            //    tempX = tempX * 2;
+                                            //    tempY = tempY * 2;
 
-                                            }
-                                            else if  (tempSigma >= Sigma)
-                                            {
-                                                tempOctave += 1;
-                                                tempSigma = 0;
-                                                tempX = tempX / 2;
-                                                tempY = tempY / 2;
-                                            }
+                                            //}
+                                            //else if (tempSigma >= Sigma) // If the next sigma value is too high, grab the lowest sigma value from the next octave
+                                            //{
+                                            //    tempOctave += 1;
+                                            //    tempSigma = 0;
+                                            //    tempX = tempX / 2;
+                                            //    tempY = tempY / 2;
+                                            //}
 
-                                            if (!(tempOctave == i
+                                            if (tempSigma >= 0 && tempSigma < Scales)
+                                            {
+                                                // Ignore the current pixel (we don't need to compare this pixel to itself
+                                                if (!(tempOctave == i
                                                 && tempSigma == j
                                                 && tempX == x
                                                 && tempY == y))
-                                            {
-                                                if (
-                                                    tempOctave >= 0
-                                                    && tempOctave < diffLevels.GetLength(0)
-                                                    && tempSigma >= 0
-                                                    && tempSigma < diffLevels.GetLength(1)
-                                                    && tempX >= 0 && tempX < diffLevels[tempOctave, tempSigma].GetLength(0)
-                                                    && tempY >= 0 && tempY < diffLevels[tempOctave, tempSigma].GetLength(1))
                                                 {
-                                                    PixelValue tempPixel = diffLevels[tempOctave, tempSigma][tempX, tempY];
-
-                                                    // Check if we need to average two values
-                                                    if (tempOctave < j && tempX + 1 < diffLevels[tempOctave, tempSigma].GetLength(0) && tempY + 1 < diffLevels[tempOctave, tempSigma].GetLength(1))
+                                                    if (
+                                                        tempOctave >= 0 && tempOctave < diffLevels.GetLength(0) // Make sure that we are within the octave range
+                                                        && tempSigma >= 0 && tempSigma < diffLevels.GetLength(1) // Make sure that we are within the scale range
+                                                        && tempX >= 0 && tempX < diffLevels[tempOctave, tempSigma].GetLength(0) // Make sure that x is within the image
+                                                        && tempY >= 0 && tempY < diffLevels[tempOctave, tempSigma].GetLength(1)) // Make sure that y is within the image
                                                     {
-                                                        PixelValue temp01 = diffLevels[tempOctave, tempSigma][tempX + 1, tempY];
-                                                        PixelValue temp00 = diffLevels[tempOctave, tempSigma][tempX + 1, tempY + 1];
-                                                        PixelValue temp10 = diffLevels[tempOctave, tempSigma][tempX, tempY + 1];
+                                                        // Get the temporary pixel
+                                                        PixelValue tempPixel = diffLevels[tempOctave, tempSigma][tempX, tempY];
+                                                        
+                                                        // If the current pixel is still a maxima, make sure that it is greater than the temppixel
+                                                        if (isMaxima)
+                                                        {
+                                                            hasMaxima = HasMaxima(currentPixel, tempPixel, hasMaxima);
 
-                                                        tempPixel.R = (short)((tempPixel.R + temp01.R + temp00.R + temp10.R) / 4);
-                                                        tempPixel.G = (short)((tempPixel.G + temp01.G + temp00.G + temp10.G) / 4);
-                                                        tempPixel.B = (short)((tempPixel.B + temp01.B + temp00.B + temp10.B) / 4);
+                                                            isMaxima = isMaxima && (hasMaxima[0] || hasMaxima[1] || hasMaxima[2]);
+                                                        }
+
+                                                        if (isMinima)
+                                                        {
+                                                            hasMinima = HasMinima(currentPixel, tempPixel, hasMinima);
+
+                                                            isMinima = isMinima && (hasMinima[0] || hasMinima[1] || hasMinima[2]);
+                                                        }
                                                     }
-
-                                                    if (isMaxima)
+                                                    else
                                                     {
-                                                        hasMaxima = HasMaxima(currentPixel, tempPixel, hasMaxima);
-
-                                                        isMaxima = isMaxima && (hasMaxima[0] || hasMaxima[1] || hasMaxima[2]);
+                                                        isMaxima = isMinima = false;
                                                     }
-
-                                                    if (isMinima)
-                                                    {
-                                                        hasMinima = HasMinima(currentPixel, tempPixel, hasMinima);
-
-                                                        isMinima = isMinima && (hasMinima[0] || hasMinima[1] || hasMinima[2]);
-                                                    }
-                                                }
-                                                else
-                                                {
-                                                    isMaxima = isMinima = false;
                                                 }
                                             }
+
                                         }
                                     }
                                 }
 
-                                if (isMaxima || isMinima)
+                                if (isMinima || isMaxima)
                                 {
                                     Keypoint p = new Keypoint();
                                     p.X = x;
@@ -222,51 +212,56 @@ namespace WpfApplication1.UI
 
 
 
-                //foreach (List<Keypoint> keyPointList in keyPoints)
-                //{
-                //    foreach (Keypoint p in keyPointList)
-                foreach (Keypoint p in keyPoints[0])
+                foreach (List<Keypoint> keyPointList in keyPoints)
                 {
-                        
-                        int x = p.X * (int)pow(2, (p.Octave));
-                        int y = p.Y * (int)pow(2, (p.Octave));
-
-                        if (x >= width || y >= height)
+                    if (keyPointList != null)
+                    {
+                        foreach (Keypoint p in keyPointList)
+                        //foreach (Keypoint p in keyPoints[0])
                         {
-                            //throw new Exception("X or Y value too large.");
-                        } else
-                        {
-                            PixelValue pixel = result[x, y];
 
-                            pixel.R += HALF;
-                            pixel.G += HALF;
-                            pixel.B += HALF;
+                            int x = p.X * (int)pow(2, (p.Octave));
+                            int y = p.Y * (int)pow(2, (p.Octave));
 
-                            result[x, y] = pixel;
+                            if (x >= width || y >= height)
+                            {
+                                //throw new Exception("X or Y value too large.");
+                            }
+                            else
+                            {
+                                PixelValue pixel = result[x, y];
+
+                                pixel.R = 255;
+                                pixel.G = 255;
+                                pixel.B = 255;
+
+                                result[x, y] = pixel;
+                            }
                         }
                     }
+                }
 
-                //}
+                //for (int i = 0; i < blurLevels.GetLength(0); i++)
+                //{
 
-                for (int i = 0; i < blurLevels.GetLength(0); i++)
-                {
+                //    for (int j = 0; j < blurLevels.GetLength(1); j++)
+                //    {
+                //        SavePixelsToFile(blurLevels[i, j], ProcessingFolder + string.Format("ResolutionLevels{0}-{1}.jpg", i, j));
+                //    }
+                //};
 
-                    for (int j = 0; j < blurLevels.GetLength(1); j++)
-                    {
-                        SavePixelsToFile(blurLevels[i, j], ProcessingFolder + string.Format("ResolutionLevels{0}-{1}.jpg", j, i));
-                    }
-                };
+                //for (int i = 0; i < diffLevels.GetLength(0); i++)
+                //{
 
-                for (int i = 0; i < diffLevels.GetLength(0); i++)
-                {
-
-                    for (int j = 0; j < diffLevels.GetLength(1); j++)
-                    {
-                        SavePixelsToFile(AddToGray(diffLevels[i, j]), ProcessingFolder + string.Format("DiffLevels{0}-{1}.jpg", j, i));
-                    }
-                };
+                //    for (int j = 0; j < diffLevels.GetLength(1); j++)
+                //    {
+                //        SavePixelsToFile(AddToGray(diffLevels[i, j]), ProcessingFolder + string.Format("DiffLevels{0}-{1}.jpg", i, j));
+                //    }
+                //};
 
                 SavePixelsToFile(result, ProcessingFolder + string.Format("SiftResult.jpg"));
+
+                ImageFile = ProcessingFolder + string.Format("SiftResult.jpg");
             }
             catch (Exception ex)
             {
@@ -1490,9 +1485,12 @@ namespace WpfApplication1.UI
 
                 if (System.IO.File.Exists(System.IO.Path.GetFullPath(ImageFile)))
                 {
+
                     //ImageBitMap = new BitmapImage(new Uri(System.IO.Path.GetFullPath(ImageFile)));
 
                     BitmapSource source = new BitmapImage(new Uri(System.IO.Path.GetFullPath(ImageFile)));
+
+                    //ImageBitMap.InvalidateProperty();
 
                     ImageBitMap = new WriteableBitmap(source);
 
@@ -1637,6 +1635,23 @@ namespace WpfApplication1.UI
             }
         }
 
+        //private void DisposeImage(BitmapImage image)
+        //{
+        //    if (image != null)
+        //    {
+        //        try
+        //        {
+        //            using (var ms = new MemoryStream(new byte[] { 0x0 }))
+        //            {
+        //                image.StreamSource(ms);
+        //            }
+        //        }
+        //        catch (Exception)
+        //        {
+        //        }
+        //    }
+        //}
+
         byte CheckThreshold(byte Value, byte Threshold)
         {
             if (Value >= Threshold)
@@ -1732,14 +1747,14 @@ namespace WpfApplication1.UI
 
             uint[] pixels = new uint[Image.Length];
 
-            Parallel.For(0, width, x =>
+            for (int x = 0; x < width; x++ )
             {
                 for (int y = 0; y < height; y++)
                 {
                     PixelValue currentPixel = Image[x, y];
                     pixels[y * width + x] = (uint)((255 << 24) | (currentPixel.R << 16) | (currentPixel.G << 8) | (currentPixel.B << 0));
                 }
-            });
+            };
 
 
             WriteableBitmap bitmap = new WriteableBitmap(width, height, 96, 96, PixelFormats.Bgra32, null);
@@ -1748,7 +1763,7 @@ namespace WpfApplication1.UI
 
             SaveImage(FileName, bitmap);
             
-            ImageBitMap = bitmap;
+            //ImageBitMap = bitmap;
 
             pixels = null;
             bitmap = null;
@@ -1758,7 +1773,8 @@ namespace WpfApplication1.UI
         {
             if (isMaxima[0])
             {
-                if (value.R <= comparedValue.R)
+                //if (value.R <= comparedValue.R)
+                if (comparedValue.R >= value.R)
                 {
                     isMaxima[0] = false;
                 }
@@ -1766,7 +1782,8 @@ namespace WpfApplication1.UI
 
             if (isMaxima[1])
             {
-                if (value.G <= comparedValue.G)
+                //if (value.G <= comparedValue.G)
+                if (comparedValue.G >= value.G)
                 {
                     isMaxima[1] = false;
                 }
@@ -1774,7 +1791,8 @@ namespace WpfApplication1.UI
 
             if (isMaxima[2])
             {
-                if (value.B <= comparedValue.B)
+                //if (value.B <= comparedValue.B)
+                if (comparedValue.B >= value.B)
                 {
                     isMaxima[2] = false;
                 }
@@ -1787,7 +1805,8 @@ namespace WpfApplication1.UI
         {
             if (isMimima[0])
             {
-                if (value.R >= comparedValue.R)
+                //if (value.R >= comparedValue.R)
+                if (comparedValue.R <= value.R)
                 {
                     isMimima[0] = false;
                 }
@@ -1795,7 +1814,8 @@ namespace WpfApplication1.UI
 
             if (isMimima[1])
             {
-                if (value.G >= comparedValue.G)
+                //if (value.G >= comparedValue.G)
+                if (comparedValue.G <= value.G)
                 {
                     isMimima[1] = false;
                 }
@@ -1803,7 +1823,8 @@ namespace WpfApplication1.UI
 
             if (isMimima[2])
             {
-                if (value.B >= comparedValue.B)
+                //if (value.B >= comparedValue.B)
+                if (comparedValue.B <= value.B)
                 {
                     isMimima[2] = false;
                 }
@@ -1827,6 +1848,16 @@ namespace WpfApplication1.UI
             {
                 return pow(n, k / 2) * pow(n, (k / 2) + 1);
             }
+        }
+
+        public bool conatainsTrue(bool[] values)
+        {
+            foreach (bool b in values)
+            {
+                if (b) return true;
+            }
+
+            return false;
         }
     }
 }

@@ -26,6 +26,7 @@ namespace BasicGeometryApp
             InitializeComponent();
 
             this.DataContext = new AnalizerViewModel();
+
         }
 
         private void GetImage_Click(object sender, RoutedEventArgs e)
