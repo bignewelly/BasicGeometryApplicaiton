@@ -38,5 +38,12 @@ namespace BasicGeometryApp
 
             analizer.Show();
         }
+
+        private void PhotoGrammetry_Click(object sender, RoutedEventArgs e)
+        {
+            PhotoGrammetry photoGrammetry = new PhotoGrammetry();
+
+            photoGrammetry.Show();
+        }
     }
 }

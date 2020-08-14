@@ -1,0 +1,60 @@
+﻿<Window x:Name="PhotoGrammetryWindow"
+        x:Class="BasicGeometryApp.PhotoGrammetry"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:sys="clr-namespace:System;assembly=mscorlib"
+        xmlns:local="clr-namespace:BasicGeometryApp"
+        xmlns:Converters="clr-namespace:WpfApplication1.Converters"
+        xmlns:geometry="clr-namespace:WpfApplication1.Geometry"
+        xmlns:i="http://schemas.microsoft.com/expression/2010/interactivity"
+        mc:Ignorable="d"
+        Title="Photogrammetry Tools" Height="500" Width="500">
+    <Window.Resources>
+        <Converters:MyEnumToStringConverter x:Key="MyEnumConverter"/>
+    </Window.Resources>
+    <StackPanel Name="AnalizerPanel" Height="auto" Width="auto">
+        <Grid Height="auto" Width="auto">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions >
+                <RowDefinition Height="auto" />
+                <RowDefinition Height="auto" />
+                <RowDefinition Height="auto" />
+                <RowDefinition Height="auto" />
+                <RowDefinition Height="auto" />
+            </Grid.RowDefinitions>
+            <Grid Grid.Row="0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="auto" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <Label Grid.Column="1">Photogrammetry Tools</Label>
+            </Grid>
+            <Grid Grid.Row="1">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="auto" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <ComboBox Name="CalibrationType" Grid.Column="1" Height="auto" Width="auto" Padding="3" >
+                    <ComboBoxItem Name="chessboard" >Chessboard</ComboBoxItem>
+                    <ComboBoxItem Name="symCirc">SymmetricalCirclePattern</ComboBoxItem>
+                    <ComboBoxItem Name="asymCirc">Asymmetrical circle pattern</ComboBoxItem>
+                </ComboBox>
+            </Grid>
+            <Grid Grid.Row="2">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="auto" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <Button Name="getFilesButton" Grid.Column="1" Click="GetFiles_Click" Height="auto" Width="auto" Content="Get File(s)" Padding="3" />
+            </Grid>
+            <TextBlock Grid.Row="3" Text="{Binding ErrorMsg }" />
+        </Grid>
+    </StackPanel>
+</Window>

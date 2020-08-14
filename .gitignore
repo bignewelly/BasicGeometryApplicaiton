@@ -5,3 +5,5 @@ WpfApplication1/obj/
 
 packages/
 
+.vs/WpfApplication1/v16/.suo
+WpfApplication1/libOpenCvSharpExtern.so
