@@ -29,11 +29,14 @@ namespace BasicGeometryApp
 
         }
 
+        private void CalibrateCamera_Click(object sender, RoutedEventArgs e)
+        {
+            ((PhotoGrammetryModel)this.DataContext).CalibrateCamera_Click(sender, e);
+        }
+
         private void GetFiles_Click(object sender, RoutedEventArgs e)
         {
             ((PhotoGrammetryModel)this.DataContext).GetFiles_Click(sender, e);
         }
-
-
     }
 }

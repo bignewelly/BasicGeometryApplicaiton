@@ -17,6 +17,7 @@ using System.Windows.Shapes;
 using System.Windows.Controls.Primitives;
 using System.IO;
 using OpenCvSharp;
+using WpfApplication1.Properties;
 
 namespace WpfApplication1.UI
 {
@@ -24,19 +25,22 @@ namespace WpfApplication1.UI
     {
         public event PropertyChangedEventHandler PropertyChanged = (sender, e) => { };
 
-        public void CalibrateCamera_Click()
+        public void CalibrateCamera_Click(object sender, RoutedEventArgs e)
         {
-            Mat imageMat = new Mat(ImageFile);
-            InputArray image = new Mat(ImageFile);
+            Mat imageMat = new Mat(ImageFiles);
+            InputArray image = new Mat(ImageFiles);
             OpenCvSharp.Size patternSize = new OpenCvSharp.Size(PatternWidth, PatternHeight);
             OutputArray corners = OutputArray.Create(imageMat);
 
-            Cv2.FindChessboardCorners(image, patternSize, corners);
+            var result = Cv2.FindChessboardCorners(image, patternSize, corners);
+
+            ErrorMsg += result.ToString();
+
         }
 
-        private String _ImageFile = "/Images/TestImage.jpg";
+        private String _ImageFile = "/Images/TestImage.jpg" ;
 
-        public String ImageFile
+        public String ImageFiles
         {
             get
             {
@@ -47,12 +51,12 @@ namespace WpfApplication1.UI
                 _ImageFile = value;
 
 
-                this.PropertyChanged(this, new PropertyChangedEventArgs(nameof(ImageFile)));
+                this.PropertyChanged(this, new PropertyChangedEventArgs(nameof(ImageFiles)));
             }
         }
 
 
-        private int _PatternWidth = 7;
+        private int _PatternWidth = 6;
 
         public int PatternWidth
         {
@@ -98,7 +102,7 @@ namespace WpfApplication1.UI
 
             if (result.HasValue)
             {
-                ImageFile = dlg.FileName;
+                ImageFiles = dlg.FileName;
             }
         }
 

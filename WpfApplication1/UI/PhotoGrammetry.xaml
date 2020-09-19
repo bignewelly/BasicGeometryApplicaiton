@@ -25,6 +25,7 @@
                 <RowDefinition Height="auto" />
                 <RowDefinition Height="auto" />
                 <RowDefinition Height="auto" />
+                <RowDefinition Height="auto" />
             </Grid.RowDefinitions>
             <Grid Grid.Row="0">
                 <Grid.ColumnDefinitions>
@@ -54,7 +55,15 @@
                 </Grid.ColumnDefinitions>
                 <Button Name="getFilesButton" Grid.Column="1" Click="GetFiles_Click" Height="auto" Width="auto" Content="Get File(s)" Padding="3" />
             </Grid>
-            <TextBlock Grid.Row="3" Text="{Binding ErrorMsg }" />
+            <Grid Grid.Row="3">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="auto" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <Button Name="calibrateCameraButton" Grid.Column="1" Click="CalibrateCamera_Click" Height="auto" Width="auto" Content="Calibrate Camera" Padding="3" />
+            </Grid>
+            <TextBlock Grid.Row="4" Text="{Binding ErrorMsg }" />
         </Grid>
     </StackPanel>
 </Window>
